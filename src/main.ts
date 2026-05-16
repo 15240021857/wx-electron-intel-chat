@@ -58,14 +58,34 @@ app.on('activate', () => {
 })
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
-console.log('✅ ipcMain 注册 ask-model 成功！')
 
-// 通信：问大模型
-ipcMain.handle('ask-model', async (event, { messages, model }) => {
+// 创建大模型实例
+const bigModel = new BigModel()
+// 通信
+// 问大模型
+ipcMain.handle('ask-model', async (event, { messages, model, provider }) => {
   console.log('ipcMain: askModel==')
-  const apikey = 'sk-fd132a6fda16432996eb9f1fd2e920af'
-  const bigModel = new BigModel(apikey, model || 'qwen-plus')
-  await bigModel.askModelStream(messages, event.sender)
+  await bigModel.askModelStream({
+    messages,
+    model,
+    provider,
+    onData(chunk) {
+      console.log('chunk===', chunk)
 
-  return 'done'
+      event.sender.send('stream-data', chunk)
+    },
+    onEnd() {
+      event.sender.send('stream-end')
+    },
+    onAbort() {
+      event.sender.send('stream-abort')
+    },
+    onError(message) {
+      event.sender.send('stream-error', message)
+    },
+  })
+})
+// 停止流式输出，节省tokens
+ipcMain.on('stop-stream', (event, arg) => {
+  bigModel.stopStream()
 })

@@ -3,7 +3,8 @@
     <h2>聊天功能区{{ chatStore.curChat?.model ? `-${chatStore.curChat?.model}` : '' }}</h2>
     <div class="h-[85%] max-w-3xl mx-auto">
       <!-- 聊天内容区 -->
-      <ChartMessage v-if="msgList?.length > 0" ref="ChartMessageRef" :msg-list="msgList" />
+      <ChartMessage v-if="msgList?.length > 0" ref="ChartMessageRef" :msg-list="msgList" :requestLoading="sendLoading"
+        :outLoading="outLoading" />
       <!-- 大模型下拉选择框 -->
       <div v-show="!chatStore.curChat?.model" class="w-full h-full flex flex-row items-center justify-center">
         <GroupSelect />
@@ -13,7 +14,7 @@
 
     <!-- 聊天输入框 -->
     <div class="w-full px-5 box-size max-w-3xl mx-auto">
-      <SearchInput @send-msg="onSendmsg" />
+      <SearchInput @send-msg="onSendmsg" :outLoading="outLoading" @stopCurMsg="stopCurMsg" />
     </div>
 
   </div>
@@ -39,77 +40,149 @@ const msgList = ref<MsgItem[]>([])
 watch(() => chatStore.curChat?.id, async (newChatId) => {
   if (newChatId) {
     msgList.value = await chatStore.getMsgListByChatId(newChatId)
-    console.log('msgList.value==2', msgList.value);
-
   } else {
     msgList.value = []
   }
 }, {
   immediate: true
 })
-let curAskMsg: MsgItem | null = null
-let removeStreamListener: any = null
+let curResMsg: MsgItem | null = null
+let cleanIpcListener: any = null
+// 聊天请求中断控制器
+let abortController: AbortController | null = null
+const stopCurMsg = () => {
+  try {
+    abortController?.abort()
+    abortController = null
+    electronIpcApi.abortStream()
+    sendLoading.value = false
+    outLoading.value = false
+  } catch (error) {
+    console.log('✔ 主动取消请求成功');
+  }
+}
+// 请求加载中
+const sendLoading = ref(false)
+// 流式输出中
+const outLoading = ref(false)
+
 const onSendmsg = async (msg: string | undefined) => {
   if (!chatStore.curChat?.model) {
     alert('请选择模型')
     return
   }
-  curAskMsg = null
-  console.log('收到msg===', msg);
+
+  curResMsg = null
   if (!msg) return
-  chatStore.curChat && (chatStore.curChat.title = msg)
+  // 处理请求取消
+  stopCurMsg()
+  abortController = new AbortController()
   // 添加msg
+  addUserMsgItem(msg)
+  // 添加标题
+  handleChatTitle(msg)
+  outLoading.value = true
+  switch (chatStore.curChat?.model) {
+    case 'GLM-4.7':
+      handleZhiPuModel(msgList.value)
+      break;
+    case 'qwen-plus':
+      handleQwenModel(msgList.value)
+      break
+    default:
+      // 这里可以调用electron原生的toast
+      alert('暂不支持' + chatStore.curChat?.model)
+      break;
+  }
+  // readJsonFun(res)
+}
+// 智谱清言提供商
+const handleZhiPuModel = async (messages: MsgItem[]) => {
+  // 请求加载中
+  sendLoading.value = true
+  // 先添加助理消息
+  curResMsg = addAssistantMsgItem()
+  // 发起请求智能体
+  try {
+    const res = await callZhipuAPI({
+      messages,
+      stream: true,
+      signal: abortController?.signal
+    })
+    sendLoading.value = false
+    // 处理流式数据
+    readHttpStream(res)
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      console.log('✅ 请求已主动取消');
+    } else {
+      console.error('❌ 请求失败', err);
+      throw err;
+    }
+  }
+}
+// 处理阿里千问请求
+const handleQwenModel = async (messages: MsgItem[]) => {
+  const sendJson = messages.map(item => {
+    return {
+      role: item.role,
+      content: item.content
+    }
+  })
+  try {
+    // 添加监听
+    curResMsg = addAssistantMsgItem()
+    // 有监听先移除监听
+    if (cleanIpcListener) {
+      cleanIpcListener()
+    }
+    // 开启读取千问数据
+    onStreamDataLisitener()
+    sendLoading.value = true
+    // 发送请求
+    const res = await electronIpcApi.askModel({ messages: sendJson, model: 'qwen-plus' })
+  } catch (error) {
+    console.log(error);
+  } finally {
+    // 有监听先移除监听
+    if (cleanIpcListener) {
+      cleanIpcListener()
+    }
+  }
+}
+// 添加对话标题
+const handleChatTitle = (msg: string) => {
+  if (!chatStore?.curChat?.title || chatStore?.curChat?.title === 'New Chat') {
+    chatStore.curChat && (chatStore.curChat.title = msg)
+  }
+}
+// 添加用户消息
+const addUserMsgItem = (content?: string) => {
   const curMsg: MsgItem = {
     id: new Date().getTime(),
     role: 'user',
     name: '',
-    content: msg,
+    content: content ?? '',
     chatId: chatStore.curChat?.id || ''
   }
   msgList.value = [...msgList.value, curMsg]
   msgStore.addMsg(curMsg)
-  let res = null
-
-  switch (chatStore.curChat?.model) {
-    case 'GLM-4.7':
-      res = await callZhipuAPI({ messages: msgList.value, stream: true })
-      readStream(res)
-      break;
-    case 'qwen-plus':
-      const sendJson = msgList.value.map(item => {
-        return {
-          role: item.role,
-          content: item.content
-        }
-      })
-      try {
-        // 添加监听
-        curAskMsg = addInitMsgItem()
-        // 有监听先移除监听
-        if (removeStreamListener) {
-          removeStreamListener()
-        }
-        readOpenAIStream()
-
-        // 发送请求
-        res = await electronIpcApi.askModel({ messages: sendJson, model: 'qwen-plus' })
-        console.log('res==', res);
-      } catch (error) {
-        console.log(error);
-      } finally {
-        // 有监听先移除监听
-        if (removeStreamListener) {
-          removeStreamListener()
-        }
-      }
-
-      break
-    default:
-      alert('暂不支持' + chatStore.curChat?.model)
-      res = null
-      break;
+  return curMsg
+}
+// 添加智能助手初始消息
+const addAssistantMsgItem = (content?: string) => {
+  const resMsg: MsgItem = {
+    id: new Date().getTime() + 1,
+    role: 'assistant',
+    reasoning_content: '',
+    content: content ?? '',
+    chatId: chatStore.curChat?.id || '',
+    showReasoning: true
   }
-  // readJsonFun(res)
+  msgList.value.push(resMsg)
+  // 维护所有msg
+  msgStore.addMsg(resMsg)
+  return resMsg
 }
 // 文字一次性输出版
 const readJsonFun = (res: any) => {
@@ -121,21 +194,44 @@ const readJsonFun = (res: any) => {
   msgStore.addMsg(askMsg)
 }
 const ChartMessageRef = useTemplateRef('ChartMessageRef')
-// 读取openAI方式的流式输出
-const readOpenAIStream = () => {
-  const curMsg = msgList.value.find(item => item?.id === curAskMsg?.id)
-  removeStreamListener = electronIpcApi.onModelStream((res: any) => {
-    // console.log('onModelStream====', res);
-    // finish_reason: "stop"
-    const curContent = res?.choices?.[0]?.delta?.content || ''
+
+// 移除steam流式输出事件监听
+let removeStreamDataListener: any = null
+let removeStreamAbortListener: any = null
+let removeStreamEndListener: any = null
+let removeStreamErrorListener: any = null
+const removeStreamListener = () => {
+  removeStreamDataListener?.()
+  removeStreamAbortListener?.()
+  removeStreamEndListener?.()
+  removeStreamErrorListener?.()
+}
+// 监听openAI方式的流式输出
+const onStreamDataLisitener = () => {
+  removeStreamListener()
+  const curMsg = msgList.value.find(item => item?.id === curResMsg?.id)
+  removeStreamDataListener = electronIpcApi.onStreamData((e: any, data: any) => {
+    sendLoading.value = false
+    const curContent = data
     curMsg && (curMsg.content += curContent)
     ChartMessageRef.value?.scrollToBottom()
-    console.log('curAskMsg==', curMsg);
+    // console.log('curResMsg==', curMsg);
+  })
+  removeStreamAbortListener = electronIpcApi.onStreamAbort(() => {
+    sendLoading.value = false
+    outLoading.value = false
+  })
+  removeStreamEndListener = electronIpcApi.onStreamEnd(() => {
+    outLoading.value = false
+  })
+  removeStreamErrorListener = electronIpcApi.onStreamError((msg) => {
+    console.error('流式输出出错了：', msg);
+    sendLoading.value = false
+    outLoading.value = false
   })
 }
 // 读取HTTP方式的流式输出版
-let cacheStr = '' // 读取流式字符串
-const readStream = async (res: any) => {
+const readHttpStream = async (res: any) => {
   if (!res?.ok) {
     throw new Error(`API 调用失败: ${res?.status}`);
   }
@@ -143,12 +239,8 @@ const readStream = async (res: any) => {
   if (!reader) {
     return
   }
-  cacheStr = ''
+  let cacheStr = '' // 读取流式字符串
   const decoder = new TextDecoder('utf-8')
-  const askMsg: MsgItem = { id: new Date().getTime(), role: 'assistant', reasoning_content: '', content: '', chatId: chatStore.curChat?.id || '', showReasoning: true }
-  msgList.value.push(askMsg)
-  // 维护所有msg
-  msgStore.addMsg(askMsg)
   while (true) {
     const { done, value } = await reader.read()
     if (done) {
@@ -166,6 +258,7 @@ const readStream = async (res: any) => {
       if (!item) continue
       if (item.startsWith('data: [DONE]')) {
         console.log('输出结束了');
+        outLoading.value = false
         return
       }
       if (item.startsWith('data:')) {
@@ -185,30 +278,26 @@ const readStream = async (res: any) => {
       const str = curJson.choices?.[0]?.delta?.content || ''
 
       // chunkStr += str
-      const curAskMsg = msgList.value.find(item => item.id === askMsg.id)
-      if (curAskMsg) {
-        curAskMsg.content += str
-        curAskMsg.reasoning_content += reasoning_str
+      const curMsg = msgList.value.find(item => item.id === curResMsg?.id)
+      if (curMsg) {
+        curMsg.content += str
+        curMsg.reasoning_content += reasoning_str
       }
       ChartMessageRef.value?.scrollToBottom()
     }
   }
 }
-// 添加一个msg，先存起来，再流式改变content
-const addInitMsgItem = () => {
-  const curAskMsg: MsgItem = {
-    id: new Date().getTime() + 1,
-    role: 'assistant',
-    reasoning_content: '',
-    content: '',
-    chatId: chatStore.curChat?.id || '',
-    showReasoning: true
+
+// 卸载组件时清理
+const onDestory = () => {
+  // 有监听先移除监听
+  if (cleanIpcListener) {
+    cleanIpcListener()
   }
-  msgList.value.push(curAskMsg)
-  // 维护所有msg
-  msgStore.addMsg(curAskMsg)
-  return curAskMsg
+  removeStreamListener()
+  stopCurMsg()
 }
+
 // 创建新对话
 const createNewSession = () => {
   msgList.value = []
@@ -218,10 +307,7 @@ onMounted(() => {
   createNewSession()
 })
 onUnmounted(() => {
-  // 有监听先移除监听
-  if (removeStreamListener) {
-    removeStreamListener()
-  }
+  onDestory()
 })
 defineExpose({
   createNewSession
