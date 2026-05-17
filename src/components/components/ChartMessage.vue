@@ -1,15 +1,23 @@
 <template>
   <div ref="contentRef" class="w-full pr-50px h-full overflow-y-auto px-5" @scroll="onScroll">
     <div class="" v-for="item in msgList" :key="item.id">
-      <div v-if="item.role === 'user'" class="w-full flex justify-end items-center mt-[16px] pl-[45px]">
-        <div class="w-full bg-[#F0F0F0] rounded-[8px] p-[8px]" v-text="item.content"></div>
+      <!-- 用户消息 -->
+      <div v-if="item.role === 'user'" class="flex justify-end items-center mt-[16px] pl-[45px]">
+        <div class="bg-[#F0F0F0] rounded-[8px] p-[8px]" v-text="item.content"></div>
         <Icon icon="ant-design:user-outlined" class="bg-[#F0F0F0] rounded-full p-[8px] ml-[8px] text-sky-600" width="36"
           height="36" />
       </div>
+      <!-- 助理消息 -->
       <div v-if="item.role === 'assistant'"
         class="w-full flex flex-row justify-start items-start mt-[16px] rounded-[8px] p-[8px]">
         <img class="w-[32px] h-[32px] rounded-full" src="@/assets/images/logo-icon-white-bg.png" alt="">
-        <div class="w-full break-words leading-relaxed rounded-[8px] p-[8px]
+        <!-- <div v-show="!(item.reasoning_content || item.content)"> -->
+        <!-- 请求加载中 -->
+        <div v-show="requestLoading" class="h-[32px] flex items-center ml-[5px]">
+          <Icon icon="svg-spinners:3-dots-scale" width="24" height="24" />
+        </div>
+        <!-- 输出内容 -->
+        <div class="w-full break-words leading-relaxed rounded-[8px] px-[8px]
           [&_h1]:text-2xl [&_h1]:font-bold [&_p]:my-2
            [&_code]:px-1 [&_code]:rounded
           [&_pre]:bg-gray-800 [&_pre]:text-white [&_pre]:p-4 [&_pre]:rounded-lg
@@ -25,16 +33,22 @@
           [&_ol]:pl-6 [&_ol]:my-3
           [&_ol]:list-decimal
           [&_ol_ol]:list-lower-alpha
+          /* 极简表格 */
+          [&_table]:w-full [&_table]:border-collapse [&_table]:whitespace-normal
+          [&_th,&_td]:border [&_th,&_td]:border-gray-300 [&_th,&_td]:px-3 [&_th,&_td]:py-2
+          [&_th]:bg-gray-100
         ">
           <div v-show="item.reasoning_content" class="w-full bg-[#f5f5f5] px-4 py-1">
+            <!-- 思考过程 -->
             <div @click="toggleThinkProcess(item)">
               <p class="flex flex-row items-center">思考过程：
-                <Icon icon="ant-design:up-outlined" width="20" height="20"
+                <Icon icon="ant-design:up-outlined" width="18" height="18"
                   :style="{ 'transform': item.showReasoning ? '' : 'rotate(180deg)' }" />
               </p>
               <div v-show="item.showReasoning" v-html="fmtContentFun(item.reasoning_content)"></div>
             </div>
           </div>
+          <!-- 助理回答主内容 -->
           <div v-html="fmtContentFun(item.content)"></div>
         </div>
       </div>
@@ -49,9 +63,15 @@ import { Icon } from "@iconify/vue";
 import { useChatStore } from '@/store/useChatStore';
 import { MsgItem } from '@/types/chat';
 
-const props = defineProps<{
-  msgList: any[]
-}>()
+const props = withDefaults(defineProps<{
+  msgList: any[],
+  requestLoading?: boolean, // 请求加载中
+  outLoading?: boolean // 流式输出中
+}>(), {
+  msgList: () => [],
+  requestLoading: false,
+  outLoading: false
+})
 const fmtContentFun = (content: string) => {
   return marked.parse(content, {
     gfm: true

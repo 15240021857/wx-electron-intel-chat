@@ -3,24 +3,42 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { AskModelParam, ElectronIpcApi } from './types/electron'
 console.log('I am preload.ts')
-
+// 创建ipc事件监听
+const createIpcListener = (channel: string) => {
+  return (callback: any) => {
+    ipcRenderer.on(channel, callback)
+    return () => {
+      ipcRenderer.off(channel, callback)
+    }
+  }
+}
 // 桥接api
 const bridgeApi: ElectronIpcApi = {
   // addCount: (count:number) => ipcRenderer.send('add-count', count)
-  askModel: async ({ messages, model }: AskModelParam) => {
-    const res = await ipcRenderer.invoke('ask-model', { messages, model })
+  // 发起大模型请求：openAI方式
+  askModel: async ({ messages, model, provider }: AskModelParam) => {
+    const res = await ipcRenderer.invoke('ask-model', { messages, model, provider })
     return res
   },
-  // 大模型流式返回
-  onModelStream: (callback: any) => {
-    const onStreamFun = (event: any, chunk: any) => {
-      return callback(chunk)
-    }
-    ipcRenderer.on('on-stream', onStreamFun)
-    return () => {
-      ipcRenderer.off('on-stream', onStreamFun)
-    }
-  },
+  abortStream: () => ipcRenderer.send('stop-stream'),
+  // 流式输出data
+  onStreamData: createIpcListener('stream-data'),
+  // 流式输出主动停止
+  onStreamAbort: createIpcListener('stream-abort'),
+  // 流式输出
+  onStreamEnd: createIpcListener('stream-end'),
+  // 流式输出主动停止
+  onStreamError: createIpcListener('stream-error'),
+  // // 大模型流式返回
+  // onModelStream: (callback: any) => {
+  //   const onStreamFun = (event: any, chunk: any) => {
+  //     return callback(chunk)
+  //   }
+  //   ipcRenderer.on('on-stream', onStreamFun)
+  //   return () => {
+  //     ipcRenderer.off('on-stream', onStreamFun)
+  //   }
+  // },
 }
 // 注册桥接api
 contextBridge.exposeInMainWorld('electronIpcApi', bridgeApi)
