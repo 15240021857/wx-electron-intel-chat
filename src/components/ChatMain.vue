@@ -1,13 +1,13 @@
 <template>
   <div class="w-full p-[16px]">
-    <h2>聊天功能区{{ chatStore.curChat?.model ? `-${chatStore.curChat?.model}` : '' }}</h2>
+    <h2>聊天功能区{{ selectedModel?.value ? `-${selectedModel?.label}` : '' }}</h2>
     <div class="h-[85%] max-w-3xl mx-auto">
       <!-- 聊天内容区 -->
       <ChartMessage v-if="msgList?.length > 0" ref="ChartMessageRef" :msg-list="msgList" :requestLoading="sendLoading"
         :outLoading="outLoading" />
       <!-- 大模型下拉选择框 -->
-      <div v-show="!chatStore.curChat?.model" class="w-full h-full flex flex-row items-center justify-center">
-        <GroupSelect />
+      <div v-show="!selectedModel?.value" class="w-full h-full flex flex-row items-center justify-center">
+        <GroupSelect @on-select="onModelSelect" />
       </div>
 
     </div>
@@ -25,8 +25,8 @@ import { onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue';
 import SearchInput from './components/SearchInput.vue'
 import GroupSelect from './components/GroupSelect.vue'
 import ChartMessage from './components/ChartMessage.vue'
-import { callZhipuAPI } from '@/api/chat';
-import { MsgItem } from '@/types/chat';
+import { callModelHttpAPI } from '@/api/chat';
+import { ModelItem, MsgItem, ProviderParam } from '@/types/chat';
 import { useChatStore } from '@/store/useChatStore';
 import { useMsgStore } from '@/store/useMsgStore';
 
@@ -36,6 +36,15 @@ const msgStore = useMsgStore()
 const { electronIpcApi } = window
 
 const msgList = ref<MsgItem[]>([])
+// 厂商模型选中
+const selectedModel = ref<ModelItem>()
+const selectedProvider = ref<ProviderParam>()
+const onModelSelect = (model: { selectedModel: ModelItem, selectedProvider: ProviderParam }) => {
+  console.log('model==', model);
+
+  selectedModel.value = model?.selectedModel
+  selectedProvider.value = model?.selectedProvider
+}
 
 watch(() => chatStore.curChat?.id, async (newChatId) => {
   if (newChatId) {
@@ -67,7 +76,7 @@ const sendLoading = ref(false)
 const outLoading = ref(false)
 
 const onSendmsg = async (msg: string | undefined) => {
-  if (!chatStore.curChat?.model) {
+  if (!selectedModel.value?.value) {
     alert('请选择模型')
     return
   }
@@ -82,36 +91,47 @@ const onSendmsg = async (msg: string | undefined) => {
   // 添加标题
   handleChatTitle(msg)
   outLoading.value = true
-  switch (chatStore.curChat?.model) {
-    case 'GLM-4.7':
-      handleZhiPuModel(msgList.value)
-      break;
-    case 'qwen-plus':
-      handleQwenModel(msgList.value)
-      break
-    default:
-      // 这里可以调用electron原生的toast
-      alert('暂不支持' + chatStore.curChat?.model)
-      break;
+  const { value: modelVal, apiType } = selectedModel.value
+  const { apiKey, baseURL } = selectedProvider.value as ProviderParam
+  if (!selectedProvider.value) {
+    return
   }
-  // readJsonFun(res)
+  console.log('apiType==', apiType);
+
+  if (apiType === 'http') {
+    // http请求方式
+    handleHttpStream(msgList.value, modelVal, { apiKey, baseURL })
+  } else if (apiType === 'openAI') {
+    // openAI请求方式
+    handleOpenAIStream(msgList.value, modelVal, { apiKey, baseURL })
+  } else {
+    // 这里可以调用electron原生的toast
+    alert('暂不支持的请求方式：' + chatStore.curChat?.apiType)
+  }
 }
 // 智谱清言提供商
-const handleZhiPuModel = async (messages: MsgItem[]) => {
+const handleHttpStream = async (messages: MsgItem[], model: string = 'glm-4.7', provider: ProviderParam) => {
   // 请求加载中
   sendLoading.value = true
   // 先添加助理消息
   curResMsg = addAssistantMsgItem()
   // 发起请求智能体
+  let res = null
   try {
-    const res = await callZhipuAPI({
-      messages,
-      stream: true,
-      signal: abortController?.signal
-    })
-    sendLoading.value = false
-    // 处理流式数据
-    readHttpStream(res)
+    if (model.startsWith('glm-')) {
+      res = await callModelHttpAPI({
+        messages,
+        stream: true,
+        signal: abortController?.signal,
+        provider,
+        model
+      })
+      sendLoading.value = false
+      // 处理流式数据
+      readHttpStream(res)
+    } else {
+      alert('暂不支持' + model)
+    }
   } catch (err: any) {
     if (err?.name === 'AbortError') {
       console.log('✅ 请求已主动取消');
@@ -122,7 +142,7 @@ const handleZhiPuModel = async (messages: MsgItem[]) => {
   }
 }
 // 处理阿里千问请求
-const handleQwenModel = async (messages: MsgItem[]) => {
+const handleOpenAIStream = async (messages: MsgItem[], model: string = 'qwen-plus', provider: ProviderParam) => {
   const sendJson = messages.map(item => {
     return {
       role: item.role,
@@ -136,11 +156,11 @@ const handleQwenModel = async (messages: MsgItem[]) => {
     if (cleanIpcListener) {
       cleanIpcListener()
     }
-    // 开启读取千问数据
-    onStreamDataLisitener()
     sendLoading.value = true
+    console.log('==', { messages: sendJson, model, provider });
+
     // 发送请求
-    const res = await electronIpcApi.askModel({ messages: sendJson, model: 'qwen-plus' })
+    await electronIpcApi.askModel({ messages: sendJson, model, provider })
   } catch (error) {
     console.log(error);
   } finally {
@@ -200,7 +220,7 @@ let removeStreamDataListener: any = null
 let removeStreamAbortListener: any = null
 let removeStreamEndListener: any = null
 let removeStreamErrorListener: any = null
-const removeStreamListener = () => {
+const removeAllStreamListener = () => {
   removeStreamDataListener?.()
   removeStreamAbortListener?.()
   removeStreamEndListener?.()
@@ -208,10 +228,12 @@ const removeStreamListener = () => {
 }
 // 监听openAI方式的流式输出
 const onStreamDataLisitener = () => {
-  removeStreamListener()
-  const curMsg = msgList.value.find(item => item?.id === curResMsg?.id)
+  removeAllStreamListener()
   removeStreamDataListener = electronIpcApi.onStreamData((e: any, data: any) => {
+    const curMsg = msgList.value.find(item => item?.id === curResMsg?.id)
     sendLoading.value = false
+    console.log('data=', data);
+
     const curContent = data
     curMsg && (curMsg.content += curContent)
     ChartMessageRef.value?.scrollToBottom()
@@ -294,7 +316,7 @@ const onDestory = () => {
   if (cleanIpcListener) {
     cleanIpcListener()
   }
-  removeStreamListener()
+  removeAllStreamListener()
   stopCurMsg()
 }
 
@@ -305,6 +327,8 @@ const createNewSession = () => {
 }
 onMounted(() => {
   createNewSession()
+  // 开启监听读取千问数据
+  onStreamDataLisitener()
 })
 onUnmounted(() => {
   onDestory()

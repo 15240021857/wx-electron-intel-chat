@@ -65,7 +65,8 @@ export default class BigModel {
       // 没传就用默认的厂商
       console.log('Config.Model.qwen==', Config.Model.qwen)
 
-      this.getOpenAiInstance(Config.Model.qwen.apiKey, Config.Model.qwen.baseURL)
+      // this.getOpenAiInstance(Config.Model.qwen.apiKey, Config.Model.qwen.baseURL)
+      this.getOpenAiInstance(Config.Model.ARK.apiKey, Config.Model.ARK.baseURL)
     }
     if (!this.client) {
       console.warn('未初始化模型')

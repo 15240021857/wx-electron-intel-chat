@@ -1,18 +1,23 @@
-import { ChatParam } from '@/types/chat'
+import { ChatHttpParam } from '@/types/chat'
 
-export const callZhipuAPI = async ({
+export const callModelHttpAPI = async ({
   messages,
   model = 'glm-4.7',
   // model='glm-5.1',
   stream = false,
   signal = null,
-}: ChatParam) => {
-  const url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+  provider = {
+    apiKey: '5e9ff230a8364875bbeaacb5685b110a.zyNRE10Cd1g83043',
+    baseURL: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+  },
+}: ChatHttpParam) => {
+  const { apiKey, baseURL } = provider
+  const url = baseURL
   return fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer 5e9ff230a8364875bbeaacb5685b110a.zyNRE10Cd1g83043',
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: model,
