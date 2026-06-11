@@ -7,7 +7,7 @@
         :outLoading="outLoading" />
       <!-- 大模型下拉选择框 -->
       <div v-show="!selectedModel?.value" class="w-full h-full flex flex-row items-center justify-center">
-        <GroupSelect @on-select="onModelSelect" />
+        <GroupSelect ref="GroupSelectRef" @on-select="onModelSelect" />
       </div>
 
     </div>
@@ -45,12 +45,19 @@ const onModelSelect = (model: { selectedModel: ModelItem, selectedProvider: Prov
   selectedModel.value = model?.selectedModel
   selectedProvider.value = model?.selectedProvider
 }
-
+const clearSelectedModel = () => {
+  selectedModel.value = undefined
+  selectedProvider.value = undefined
+}
+const GroupSelectRef = useTemplateRef('GroupSelectRef')
 watch(() => chatStore.curChat?.id, async (newChatId) => {
+  console.log('切换聊天了', newChatId, chatStore.curChat);
   if (newChatId) {
     msgList.value = await chatStore.getMsgListByChatId(newChatId)
+    GroupSelectRef.value?.setModelAndProviderByModel(chatStore.curChat?.model || '')
   } else {
     msgList.value = []
+    clearSelectedModel()
   }
 }, {
   immediate: true
