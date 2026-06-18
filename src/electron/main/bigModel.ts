@@ -12,7 +12,7 @@ export default class BigModel {
    * @param {string} apikey - API密钥，用于身份验证
    * @param {string} model - 使用的模型名称，如'qwen-plus'
    */
-  constructor(defaultModel: string = 'qwen-plus') {
+  constructor(defaultModel = 'qwen-plus') {
     this.client = null
     this.defaultModel = defaultModel
     this.abortController = null
