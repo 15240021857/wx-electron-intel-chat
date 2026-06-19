@@ -1,14 +1,12 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @theme {
   --color-primary: rgba(31, 127, 62, 1);
-  --color-primary-blank: rgba(234,255,242, 1);
+  --color-primary-blank: rgba(234, 255, 242, 1);
   --color-primary-blank-hover: rgba(207, 243, 221, 0.6);
   --color-primary-blank-active: rgba(207, 243, 221, 0.9);
 }
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   /* margin: auto; */
   /* max-width: 38rem; */
   /* padding: 2rem; */
