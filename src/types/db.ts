@@ -35,6 +35,7 @@ export interface Model {
   value: string
   enabled: 0 | 1 // 0-禁用，1-启用
   apiType: 'http' | 'openAI'
+  maxTokens?: number
 }
 // 偏好设置
 export interface Setting {

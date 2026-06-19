@@ -13,8 +13,8 @@
     "build-icon": "electron-icon-builder --input=./src/assets/icon.png --output=./src/assets",
     "lint:check": "eslint --ext .ts,.tsx,.js,.vue",
     "lint:fix": "npm run lint:check -- --fix",
-    "prettier:check": "prettier --check",
-    "prettier:fix": "prettier --write",
+    "prettier:check": "prettier --ext .json,.css,.scss,.md,.yml,.yaml --check",
+    "prettier:fix": "prettier --ext .json,.css,.scss,.md,.yml,.yaml --write",
     "ci:lint": "npm run lint:check && npm run prettier:check",
     "prepare": "husky"
   },
@@ -29,7 +29,7 @@
       "npm run lint:fix"
     ],
     "*.{json,css,scss,md,yml,yaml}": [
-      "npm run prettier:fix"
+      "prettier --write"
     ]
   },
   "devDependencies": {
