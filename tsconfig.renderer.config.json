@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
-    "composite": true, 
+    "composite": true,
     "target": "ESNext", // 目标语法
     "module": "ESNext", // 目标模块化方案
     "moduleResolution": "bundler", // 模块解析策略: 是按照打包器的方式来解析模块
     "lib": ["ESNext"], // 编译时库
-    "types": ["node", "vite/client"], // 加载的声明文件
+    "types": ["node", "vite/client"] // 加载的声明文件
   },
+  "exclude": ["**/*.vue.bak"],
   "include": ["vite.renderer.config.mts"] // 只包含渲染进程代码
 }

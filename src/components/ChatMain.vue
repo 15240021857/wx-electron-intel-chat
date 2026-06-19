@@ -3,32 +3,35 @@
     <h2>聊天功能区{{ selectedModel?.value ? `-${selectedModel?.label}` : '' }}</h2>
     <div class="h-[85%] max-w-3xl mx-auto">
       <!-- 聊天内容区 -->
-      <ChartMessage v-if="msgList?.length > 0" ref="ChartMessageRef" :msg-list="msgList" :requestLoading="sendLoading"
-        :outLoading="outLoading" />
+      <ChartMessage
+        v-if="msgList?.length > 0"
+        ref="ChartMessageRef"
+        :msg-list="msgList"
+        :request-loading="sendLoading"
+        :out-loading="outLoading"
+      />
       <!-- 大模型下拉选择框 -->
       <div v-show="!selectedModel?.value" class="w-full h-full flex flex-row items-center justify-center">
         <GroupSelect ref="GroupSelectRef" @on-select="onModelSelect" />
       </div>
-
     </div>
 
     <!-- 聊天输入框 -->
     <div class="w-full px-5 box-size max-w-3xl mx-auto">
-      <SearchInput @send-msg="onSendmsg" :outLoading="outLoading" @stopCurMsg="stopCurMsg" />
+      <SearchInput :out-loading="outLoading" @send-msg="onSendmsg" @stop-cur-msg="stopCurMsg" />
     </div>
-
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue';
+import { onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import SearchInput from './components/SearchInput.vue'
 import GroupSelect from './components/GroupSelect.vue'
 import ChartMessage from './components/ChartMessage.vue'
-import { callModelHttpAPI } from '@/api/chat';
-import { ModelItem, MsgItem, ProviderParam } from '@/types/chat';
-import { useChatStore } from '@/store/useChatStore';
-import { useMsgStore } from '@/store/useMsgStore';
+import { callModelHttpAPI } from '@/api/chat'
+import { ModelItem, MsgItem, ProviderParam } from '@/types/chat'
+import { useChatStore } from '@/store/useChatStore'
+import { useMsgStore } from '@/store/useMsgStore'
 
 const chatStore = useChatStore()
 const msgStore = useMsgStore()
@@ -39,8 +42,8 @@ const msgList = ref<MsgItem[]>([])
 // 厂商模型选中
 const selectedModel = ref<ModelItem>()
 const selectedProvider = ref<ProviderParam>()
-const onModelSelect = (model: { selectedModel: ModelItem, selectedProvider: ProviderParam }) => {
-  console.log('model==', model);
+const onModelSelect = (model: { selectedModel: ModelItem; selectedProvider: ProviderParam }) => {
+  console.log('model==', model)
 
   selectedModel.value = model?.selectedModel
   selectedProvider.value = model?.selectedProvider
@@ -50,18 +53,22 @@ const clearSelectedModel = () => {
   selectedProvider.value = undefined
 }
 const GroupSelectRef = useTemplateRef('GroupSelectRef')
-watch(() => chatStore.curChat?.id, async (newChatId) => {
-  console.log('切换聊天了', newChatId, chatStore.curChat);
-  if (newChatId) {
-    msgList.value = await chatStore.getMsgListByChatId(newChatId)
-    GroupSelectRef.value?.setModelAndProviderByModel(chatStore.curChat?.model || '')
-  } else {
-    msgList.value = []
-    clearSelectedModel()
+watch(
+  () => chatStore.curChat?.id,
+  async (newChatId) => {
+    console.log('切换聊天了', newChatId, chatStore.curChat)
+    if (newChatId) {
+      msgList.value = await chatStore.getMsgListByChatId(newChatId)
+      GroupSelectRef.value?.setModelAndProviderByModel(chatStore.curChat?.model || '')
+    } else {
+      msgList.value = []
+      clearSelectedModel()
+    }
+  },
+  {
+    immediate: true,
   }
-}, {
-  immediate: true
-})
+)
 let curResMsg: MsgItem | null = null
 let cleanIpcListener: any = null
 // 聊天请求中断控制器
@@ -74,7 +81,7 @@ const stopCurMsg = () => {
     sendLoading.value = false
     outLoading.value = false
   } catch (error) {
-    console.log('✔ 主动取消请求成功');
+    console.log('✔ 主动取消请求成功')
   }
 }
 // 请求加载中
@@ -103,7 +110,7 @@ const onSendmsg = async (msg: string | undefined) => {
   if (!selectedProvider.value) {
     return
   }
-  console.log('apiType==', apiType);
+  console.log('apiType==', apiType)
 
   if (apiType === 'http') {
     // http请求方式
@@ -117,7 +124,7 @@ const onSendmsg = async (msg: string | undefined) => {
   }
 }
 // 智谱清言提供商
-const handleHttpStream = async (messages: MsgItem[], model: string = 'glm-4.7', provider: ProviderParam) => {
+const handleHttpStream = async (messages: MsgItem[], model = 'glm-4.7', provider: ProviderParam) => {
   // 请求加载中
   sendLoading.value = true
   // 先添加助理消息
@@ -131,7 +138,7 @@ const handleHttpStream = async (messages: MsgItem[], model: string = 'glm-4.7', 
         stream: true,
         signal: abortController?.signal,
         provider,
-        model
+        model,
       })
       sendLoading.value = false
       // 处理流式数据
@@ -141,19 +148,19 @@ const handleHttpStream = async (messages: MsgItem[], model: string = 'glm-4.7', 
     }
   } catch (err: any) {
     if (err?.name === 'AbortError') {
-      console.log('✅ 请求已主动取消');
+      console.log('✅ 请求已主动取消')
     } else {
-      console.error('❌ 请求失败', err);
-      throw err;
+      console.error('❌ 请求失败', err)
+      throw err
     }
   }
 }
 // 处理阿里千问请求
-const handleOpenAIStream = async (messages: MsgItem[], model: string = 'qwen-plus', provider: ProviderParam) => {
-  const sendJson = messages.map(item => {
+const handleOpenAIStream = async (messages: MsgItem[], model = 'qwen-plus', provider: ProviderParam) => {
+  const sendJson = messages.map((item) => {
     return {
       role: item.role,
-      content: item.content
+      content: item.content,
     }
   })
   try {
@@ -164,12 +171,12 @@ const handleOpenAIStream = async (messages: MsgItem[], model: string = 'qwen-plu
       cleanIpcListener()
     }
     sendLoading.value = true
-    console.log('==', { messages: sendJson, model, provider });
+    console.log('==', { messages: sendJson, model, provider })
 
     // 发送请求
     await electronIpcApi.askModel({ messages: sendJson, model, provider })
   } catch (error) {
-    console.log(error);
+    console.log(error)
   } finally {
     // 有监听先移除监听
     if (cleanIpcListener) {
@@ -190,7 +197,7 @@ const addUserMsgItem = (content?: string) => {
     role: 'user',
     name: '',
     content: content ?? '',
-    chatId: chatStore.curChat?.id || ''
+    chatId: chatStore.curChat?.id || '',
   }
   msgList.value = [...msgList.value, curMsg]
   msgStore.addMsg(curMsg)
@@ -204,22 +211,29 @@ const addAssistantMsgItem = (content?: string) => {
     reasoning_content: '',
     content: content ?? '',
     chatId: chatStore.curChat?.id || '',
-    showReasoning: true
+    showReasoning: true,
   }
   msgList.value.push(resMsg)
   // 维护所有msg
   msgStore.addMsg(resMsg)
   return resMsg
 }
-// 文字一次性输出版
-const readJsonFun = (res: any) => {
-  const message = res?.choices?.[0]?.message || null
+// // 文字一次性输出版
+// const readJsonFun = (res: any) => {
+//   const message = res?.choices?.[0]?.message || null
 
-  const askMsg: MsgItem = { id: new Date().getTime(), role: message?.role || '', reasoning_content: '', content: message?.content || '', chatId: chatStore.curChat?.id || '', showReasoning: true }
-  msgList.value.push(askMsg)
-  // 维护所有msg
-  msgStore.addMsg(askMsg)
-}
+//   const askMsg: MsgItem = {
+//     id: new Date().getTime(),
+//     role: message?.role || '',
+//     reasoning_content: '',
+//     content: message?.content || '',
+//     chatId: chatStore.curChat?.id || '',
+//     showReasoning: true,
+//   }
+//   msgList.value.push(askMsg)
+//   // 维护所有msg
+//   msgStore.addMsg(askMsg)
+// }
 const ChartMessageRef = useTemplateRef('ChartMessageRef')
 
 // 移除steam流式输出事件监听
@@ -237,9 +251,9 @@ const removeAllStreamListener = () => {
 const onStreamDataLisitener = () => {
   removeAllStreamListener()
   removeStreamDataListener = electronIpcApi.onStreamData((e: any, data: any) => {
-    const curMsg = msgList.value.find(item => item?.id === curResMsg?.id)
+    const curMsg = msgList.value.find((item) => item?.id === curResMsg?.id)
     sendLoading.value = false
-    console.log('data=', data);
+    console.log('data=', data)
 
     const curContent = data
     curMsg && (curMsg.content += curContent)
@@ -254,15 +268,17 @@ const onStreamDataLisitener = () => {
     outLoading.value = false
   })
   removeStreamErrorListener = electronIpcApi.onStreamError((msg) => {
-    console.error('流式输出出错了：', msg);
+    console.error('流式输出出错了：', msg)
     sendLoading.value = false
     outLoading.value = false
   })
 }
+// 正在输出中...
+const IS_STREAMING = true
 // 读取HTTP方式的流式输出版
 const readHttpStream = async (res: any) => {
   if (!res?.ok) {
-    throw new Error(`API 调用失败: ${res?.status}`);
+    throw new Error(`API 调用失败: ${res?.status}`)
   }
   const reader: ReadableStreamDefaultReader<Uint8Array> | undefined = res?.body?.getReader()
   if (!reader) {
@@ -270,7 +286,7 @@ const readHttpStream = async (res: any) => {
   }
   let cacheStr = '' // 读取流式字符串
   const decoder = new TextDecoder('utf-8')
-  while (true) {
+  while (IS_STREAMING) {
     const { done, value } = await reader.read()
     if (done) {
       break
@@ -286,7 +302,7 @@ const readHttpStream = async (res: any) => {
     for (let item of textLines) {
       if (!item) continue
       if (item.startsWith('data: [DONE]')) {
-        console.log('输出结束了');
+        console.log('输出结束了')
         outLoading.value = false
         return
       }
@@ -299,7 +315,7 @@ const readHttpStream = async (res: any) => {
       try {
         curJson = JSON.parse(data)
       } catch (error) {
-        console.error('catch到了：', error);
+        console.error('catch到了：', error)
         continue
       }
       // const str = curJson.choices?.[0]?.delta?.reasoning_content || ''
@@ -307,7 +323,7 @@ const readHttpStream = async (res: any) => {
       const str = curJson.choices?.[0]?.delta?.content || ''
 
       // chunkStr += str
-      const curMsg = msgList.value.find(item => item.id === curResMsg?.id)
+      const curMsg = msgList.value.find((item) => item.id === curResMsg?.id)
       if (curMsg) {
         curMsg.content += str
         curMsg.reasoning_content += reasoning_str
@@ -341,8 +357,8 @@ onUnmounted(() => {
   onDestory()
 })
 defineExpose({
-  createNewSession
+  createNewSession,
 })
 </script>
 
-<style lang='scss' scoped></style>
+<style lang="scss" scoped></style>

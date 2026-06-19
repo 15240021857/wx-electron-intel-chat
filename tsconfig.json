@@ -14,8 +14,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["vite.renderer.config.mts"],
-  "references": [
-    {"path": "./tsconfig.renderer.config.json"}
-  ]
+  "exclude": ["vite.renderer.config.mts", "**/*.vue.bak"],
+  "references": [{ "path": "./tsconfig.renderer.config.json" }]
 }

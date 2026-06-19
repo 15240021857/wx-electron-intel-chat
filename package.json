@@ -10,8 +10,13 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx .",
-    "build-icon": "electron-icon-builder --input=./src/assets/icon.png --output=./src/assets"
+    "build-icon": "electron-icon-builder --input=./src/assets/icon.png --output=./src/assets",
+    "lint:check": "eslint --ext .ts,.tsx,.js,.vue",
+    "lint:fix": "npm run lint:check -- --fix",
+    "prettier:check": "prettier --check",
+    "prettier:fix": "prettier --write",
+    "ci:lint": "npm run lint:check && npm run prettier:check",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": {
@@ -19,6 +24,14 @@
     "email": "15240021857@139.com"
   },
   "license": "MIT",
+  "lint-staged": {
+    "*.{ts,tsx,js,vue}": [
+      "npm run lint:fix"
+    ],
+    "*.{json,css,scss,md,yml,yaml}": [
+      "npm run prettier:fix"
+    ]
+  },
   "devDependencies": {
     "@electron-forge/cli": "^7.11.1",
     "@electron-forge/maker-deb": "^7.11.1",
@@ -41,11 +54,15 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-vue": "^9.28.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "postcss": "^8.5.8",
     "prettier": "^3.8.3",
     "tailwindcss": "^4.2.1",
     "typescript": "~4.5.4",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "vue-eslint-parser": "^9.4.3"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",

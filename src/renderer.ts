@@ -26,14 +26,12 @@
  * ```
  */
 
-import {createApp} from 'vue'
+import { createApp } from 'vue'
 import App from './app.vue'
-import './index.css';
-import {setupStore} from '@/store'
+import './index.css'
+import { setupStore } from '@/store'
 const app = createApp(App)
 
 setupStore(app)
 app.mount('#app')
-console.log(
-  '👋 This message is being logged by "renderer.ts", included via Vite',
-);
+console.log('👋 This message is being logged by "renderer.ts", included via Vite')

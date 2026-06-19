@@ -1,0 +1,9 @@
+# backup files
+*.bak
+*.backup
+*.old
+
+# vue backup files
+*.vue.bak
+*.vue.backup
+*.vue.old
