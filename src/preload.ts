@@ -17,6 +17,7 @@ const bridgeApi: ElectronIpcApi = {
   // addCount: (count:number) => ipcRenderer.send('add-count', count)
   // 发起大模型请求：openAI方式
   askModel: async ({ messages, model, provider }: AskModelParam) => {
+    console.log('preload.ts: askModel=============', messages, model, provider)
     const res = await ipcRenderer.invoke('ask-model', { messages, model, provider })
     return res
   },

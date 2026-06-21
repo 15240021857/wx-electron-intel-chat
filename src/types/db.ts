@@ -5,6 +5,7 @@ export interface Chat {
   providerId: string
   modelId: string
   //   apiType: 'http' | 'openAI'
+  providerIcon?: string
   createdAt: Date
   updatedAt: Date
 }
@@ -16,6 +17,8 @@ export interface Message {
   role: 'user' | 'assistant' | 'system'
   content: string
   createdAt: Date
+  reasoning_content?: string
+  showReasoning?: boolean
 }
 // 提供商
 export interface Provider {
@@ -24,6 +27,7 @@ export interface Provider {
   apiKey: string
   baseURL: string
   enabled: 0 | 1 // 0-禁用，1-启用
+  providerIcon?: string
   createdAt: Date
   updatedAt: Date
 }

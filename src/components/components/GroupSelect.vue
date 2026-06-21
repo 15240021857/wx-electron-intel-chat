@@ -2,36 +2,42 @@
   <div class="w-full flex flex-row justify-center">
     <select
       class="w-[min(398px,80%)] border border-gray-300 rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      :value="chatStore.curChat?.model" @change="onchange">
+      :value="chatStore.curChat?.modelId"
+      @change="onchange"
+    >
       <option value="" disabled selected>请选择智能体</option>
       <optgroup v-for="item in providerList" :key="item.id" :label="item.label">
-        <option v-for="model in item.modelList" :value="model.value" :label="model.label"></option>
+        <option v-for="model in item.modelList" :key="model.value" :value="model.value" :label="model.label"></option>
       </optgroup>
     </select>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useChatStore } from '@/store/useChatStore';
-import { ModelItem, Provider, ProviderParam } from '@/types/chat';
-import { nextTick, ref } from 'vue';
-// const curModel = defineModel('curModel', {
-//   type: String,
-//   default: 'GLM-4.7'
-// })
+import { useChatStore } from '@/store/useChatStore'
+import { ModelItem, ProviderItem, ProviderParam } from '@/types/chat'
+import { onMounted, ref } from 'vue'
+import { useProvider } from '@/db/hooks/useProvider'
+import { useModel } from '@/db/hooks/useModel'
+import { useChat } from '@/db/hooks/useChat'
+const { updateChat } = useChat()
+
 const emits = defineEmits<{
-  (e: 'onSelect', model: { selectedModel: ModelItem | null, selectedProvider: ProviderParam | null }): void
+  (e: 'onSelect', model: { selectedModel: ModelItem | null; selectedProvider: ProviderParam | null }): void
 }>()
-const providerList = ref<Provider[]>([
-  {
-    id: '1', label: '智谱清言',
-    apiKey: '5e9ff230a8364875bbeaacb5685b110a.zyNRE10Cd1g83043',
-    baseURL: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-    modelList: [
-      { id: '1', label: 'GLM-4.7', value: 'glm-4.7', apiType: 'http' },
-      { id: '2', label: 'GLM-5.0', value: 'glm-5', apiType: 'http' },
-    ]
-  },
+const { getProviders, providers } = useProvider()
+const { getModels, models } = useModel()
+const providerList = ref<ProviderItem[]>([
+  // {
+  //   id: '1',
+  //   label: '智谱清言',
+  //   apiKey: '5e9ff230a8364875bbeaacb5685b110a.zyNRE10Cd1g83043',
+  //   baseURL: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+  //   modelList: [
+  //     { id: '1', label: 'GLM-4.7', value: 'glm-4.7', apiType: 'http' },
+  //     { id: '2', label: 'GLM-5.0', value: 'glm-5', apiType: 'http' },
+  //   ],
+  // },
   // {
   //   id: '2',
   //   label: '阿里通义千问',
@@ -53,14 +59,24 @@ const providerList = ref<Provider[]>([
   //   baseURL: '',
   //   modelList: [{ id: '1', label: 'ERNIE-3.5-8K', value: 'ERNIE-3.5-8K', apiType: 'openAI' }]
   // },
-]);
-const chatStore = useChatStore();
+])
+// 获取启用的供应商
+const getProviderList = async () => {
+  await getProviders({ enabled: 1 })
+  await getModels({ enabled: 1 })
+  providerList.value = providers.value.map((item) => {
+    return {
+      ...item,
+      modelList: models.value.filter((model) => {
+        return model.providerId === item.id
+      }),
+    }
+  })
+}
+
+const chatStore = useChatStore()
 // 根据选中模型拿到当前模型和供应商
 const setModelAndProviderByModel = (selectedModel: string) => {
-  // 更新当前chat的model
-  if (chatStore.curChat) {
-    chatStore.curChat.model = selectedModel
-  }
   // 通知父组件
   let curModel = null
   let curProvider = null
@@ -69,32 +85,46 @@ const setModelAndProviderByModel = (selectedModel: string) => {
       if (model.value === selectedModel) {
         curModel = model
         curProvider = {
+          id: provider.id,
           apiKey: provider.apiKey,
-          baseURL: provider.baseURL
+          baseURL: provider.baseURL,
         } as ProviderParam
         // 直接跳出
         break
       }
     }
   }
-  console.log('curModel==', curModel);
-  console.log('curProvider==', curProvider);
+  // console.log('curModel==', curModel)
+  // console.log('curProvider==', curProvider)
 
+  // 更新当前chat的model
+  if (chatStore.curChat) {
+    updateChat({
+      id: chatStore.curChat.id,
+      modelId: curModel?.id || '',
+      providerId: curProvider?.id || '',
+    })
+    chatStore.curChat.modelId = curModel?.id || ''
+    chatStore.curChat.providerId = curProvider?.id || ''
+  }
   emits('onSelect', {
     selectedModel: curModel,
-    selectedProvider: curProvider
+    selectedProvider: curProvider,
   })
 }
 // 拿到当前的模型名+请求方式
 const onchange = (e: any) => {
-  console.log('onchange==', e.target.value);
+  console.log('onchange==', e.target.value)
   // 在这里进行数据处理
   setModelAndProviderByModel(e.target.value)
 }
+onMounted(() => {
+  getProviderList()
+})
 defineExpose({
   // 当切换历史chat时，根据chat的model来设置当前模型和供应商
-  setModelAndProviderByModel
+  setModelAndProviderByModel,
 })
 </script>
 
-<style lang='scss' scoped></style>
+<style lang="scss" scoped></style>

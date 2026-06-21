@@ -3,12 +3,14 @@ import { ChatItem, MsgItem } from '@/types/chat'
 import chatIcon from '@/assets/images/logo-icon-white-bg.png'
 import { fmtDate } from '@/utils'
 import { useMsgStore } from './useMsgStore'
+import { useChat } from '@/db/hooks/useChat'
 
 interface ChatStore {
   curChat: ChatItem | null
   chatList: ChatItem[]
 }
 
+const { chats, addChat, getChats } = useChat()
 export const useChatStore = defineStore('chatStore', {
   state: (): ChatStore => ({
     curChat: null,
@@ -18,20 +20,31 @@ export const useChatStore = defineStore('chatStore', {
     setcurChat(chat: ChatItem) {
       this.curChat = chat
     },
-    setChatList(chatListData: ChatItem[]) {
-      this.chatList = chatListData
+    setChatList(list: ChatItem[]) {
+      this.chatList = list
     },
-    createChat() {
-      const newChat: ChatItem = {
-        id: Date.now(),
-        title: 'New Chat',
-        model: '',
-        providerIcon: chatIcon,
-        time: fmtDate(new Date(), 'yyyy-MM-dd'),
+    async getChatList() {
+      await getChats()
+      console.log('获取对话列表：', chats.value)
+
+      if (chats.value.length === 0) {
+        console.log('没有历史记录')
+        this.createChat()
+      } else {
+        this.setChatList(chats.value)
+        const curChat = chats.value[0]
+        this.setcurChat(curChat)
       }
-      this.setChatList([newChat, ...this.chatList])
-      this.setcurChat(newChat)
-      console.log('chatList==', this.chatList)
+    },
+    async createChat() {
+      const chatData = {
+        title: '新对话',
+        modelId: '',
+        providerId: '',
+      }
+      const curChat: ChatItem = await addChat(chatData)
+      this.setChatList([curChat, ...this.chatList])
+      this.setcurChat(curChat)
     },
     // 根据聊天id获取消息列表
     getMsgListByChatId(chatId: string | number): MsgItem[] {

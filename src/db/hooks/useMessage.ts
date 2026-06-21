@@ -7,43 +7,54 @@ export const useMessage = () => {
   const messages = ref<Message[]>([])
 
   //   获取消息列表
-  const getMessages = async (chatId: string) => {
-    const list = await db.messages.where('chatId').equals(chatId).sortBy('createdAt')
+  const getMessages = async () => {
+    const list = await db.messages.orderBy('createdAt').toArray()
     console.log('获取消息列表：', list)
     messages.value = list
+  }
+  const getMessagesByChatId = async (chatId: string): Promise<Message[]> => {
+    const list = await db.messages.where('chatId').equals(chatId).sortBy('createdAt')
+    console.log('获取消息列表：', list)
+    return list
   }
   //   添加用户消息
   const addUserMessage = async (chatId: string, content: string) => {
     try {
       console.log('添加消息：', chatId, content)
-      const res = await db.messages.add({
+      const newMsg: Message = {
         id: uuid(),
         chatId,
         role: 'user',
         content,
         createdAt: new Date(),
-      })
+      }
+      const res = await db.messages.add(newMsg)
       console.log('添加成功：', res)
-      getMessages(chatId)
+      return newMsg
     } catch (error) {
       console.error('添加消息失败：', error)
+      throw error
     }
   }
   //   添加助理消息
   const addAssistantMessage = async (chatId: string, content: string) => {
     try {
       console.log('添加助理消息：', chatId, content)
-      const res = await db.messages.add({
+      const newMsg: Message = {
         id: uuid(),
         chatId,
         role: 'assistant',
         content,
         createdAt: new Date(),
-      })
+        reasoning_content: '',
+        showReasoning: true,
+      }
+      const res = await db.messages.add(newMsg)
       console.log('添加成功：', res)
-      getMessages(chatId)
+      return newMsg
     } catch (error) {
       console.error('添加消息失败：', error)
+      throw error
     }
   }
   //   修改消息
@@ -76,6 +87,7 @@ export const useMessage = () => {
   return {
     messages,
     getMessages,
+    getMessagesByChatId,
     addUserMessage,
     addAssistantMessage,
     updateMessage,

@@ -1,7 +1,10 @@
 <template>
-  <div class="w-full p-[16px]">
-    <h2>聊天功能区{{ selectedModel?.value ? `-${selectedModel?.label}` : '' }}</h2>
-    <div class="h-[85%] max-w-3xl mx-auto">
+  <div class="w-full">
+    <h2 class="w-full bg-gray-100 h-[52px] flex items-center px-3 border-b border-b-gray-300">
+      <span class="font-semibold mr-4">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
+      <span class="font-semibold"></span>{{ chatStore.curChat?.title.slice(0, 20) }}
+    </h2>
+    <div class="h-[calc(100%-52px-60px)] max-w-3xl mx-auto p-[16px]">
       <!-- 聊天内容区 -->
       <ChartMessage
         v-if="msgList?.length > 0"
@@ -30,19 +33,28 @@ import GroupSelect from './components/GroupSelect.vue'
 import ChartMessage from './components/ChartMessage.vue'
 import { callModelHttpAPI } from '@/api/chat'
 import { ModelItem, MsgItem, ProviderParam } from '@/types/chat'
+import { Message, Model } from '@/types/db'
 import { useChatStore } from '@/store/useChatStore'
 import { useMsgStore } from '@/store/useMsgStore'
+import { useMessage } from '@/db/hooks/useMessage'
+import { useChat } from '@/db/hooks/useChat'
+import { useModel } from '@/db/hooks/useModel'
+
+const { getMessagesByChatId, addUserMessage, addAssistantMessage, updateMessage } = useMessage()
+const { getChatById, updateChat } = useChat()
 
 const chatStore = useChatStore()
 const msgStore = useMsgStore()
+
+const { getModelById } = useModel()
 
 const { electronIpcApi } = window
 
 const msgList = ref<MsgItem[]>([])
 // 厂商模型选中
-const selectedModel = ref<ModelItem>()
+const selectedModel = ref<Model>()
 const selectedProvider = ref<ProviderParam>()
-const onModelSelect = (model: { selectedModel: ModelItem; selectedProvider: ProviderParam }) => {
+const onModelSelect = (model: { selectedModel: Model; selectedProvider: ProviderParam }) => {
   console.log('model==', model)
 
   selectedModel.value = model?.selectedModel
@@ -58,8 +70,23 @@ watch(
   async (newChatId) => {
     console.log('切换聊天了', newChatId, chatStore.curChat)
     if (newChatId) {
-      msgList.value = await chatStore.getMsgListByChatId(newChatId)
-      GroupSelectRef.value?.setModelAndProviderByModel(chatStore.curChat?.model || '')
+      // 拿到该chat的msgList
+      const curChatMsgList = await getMessagesByChatId(newChatId)
+      msgList.value = curChatMsgList.map((item) => {
+        return {
+          ...item,
+          reasoning_content: '',
+          showReasoning: true,
+        }
+      })
+      // 再拿到模型信息和供应商信息
+      if (chatStore.curChat?.modelId) {
+        const curModel = await getModelById(chatStore.curChat?.modelId as string)
+        // 直接调下拉组件的方法获取当前模型和厂商
+        GroupSelectRef.value?.setModelAndProviderByModel(curModel?.value || '')
+      } else {
+        clearSelectedModel()
+      }
     } else {
       msgList.value = []
       clearSelectedModel()
@@ -69,7 +96,17 @@ watch(
     immediate: true,
   }
 )
-let curResMsg: MsgItem | null = null
+// 当前助理流式输出消息
+let curAssistantMsg: MsgItem | null = null
+// 流式输出完成后,更新数据到DB
+const updateAssistantMsgItemWhenDone = async (message: Partial<MsgItem>) => {
+  updateMessage({
+    id: message.id || '',
+    content: message?.content ?? '',
+    showReasoning: message?.showReasoning,
+    reasoning_content: message?.reasoning_content ?? '',
+  })
+}
 let cleanIpcListener: any = null
 // 聊天请求中断控制器
 let abortController: AbortController | null = null
@@ -95,13 +132,13 @@ const onSendmsg = async (msg: string | undefined) => {
     return
   }
 
-  curResMsg = null
+  curAssistantMsg = null
   if (!msg) return
   // 处理请求取消
   stopCurMsg()
   abortController = new AbortController()
   // 添加msg
-  addUserMsgItem(msg)
+  await addUserMsgItem(msg)
   // 添加标题
   handleChatTitle(msg)
   outLoading.value = true
@@ -111,30 +148,35 @@ const onSendmsg = async (msg: string | undefined) => {
     return
   }
   console.log('apiType==', apiType)
-
+  console.log('msgList.value==', msgList.value)
   if (apiType === 'http') {
     // http请求方式
-    handleHttpStream(msgList.value, modelVal, { apiKey, baseURL })
+    handleHttpStream(msgList.value, modelVal, selectedProvider.value)
   } else if (apiType === 'openAI') {
     // openAI请求方式
     handleOpenAIStream(msgList.value, modelVal, { apiKey, baseURL })
   } else {
     // 这里可以调用electron原生的toast
-    alert('暂不支持的请求方式：' + chatStore.curChat?.apiType)
+    alert('暂不支持的请求方式：' + apiType)
   }
 }
 // 智谱清言提供商
-const handleHttpStream = async (messages: MsgItem[], model = 'glm-4.7', provider: ProviderParam) => {
+const handleHttpStream = async (messages: MsgItem[], model = 'glm-4.7-flash', provider: ProviderParam) => {
   // 请求加载中
   sendLoading.value = true
   // 先添加助理消息
-  curResMsg = addAssistantMsgItem()
+  curAssistantMsg = await addAssistantMsgItem()
   // 发起请求智能体
   let res = null
   try {
     if (model.startsWith('glm-')) {
       res = await callModelHttpAPI({
-        messages,
+        messages: messages.map((item) => {
+          return {
+            role: item.role,
+            content: item.content,
+          }
+        }),
         stream: true,
         signal: abortController?.signal,
         provider,
@@ -156,7 +198,11 @@ const handleHttpStream = async (messages: MsgItem[], model = 'glm-4.7', provider
   }
 }
 // 处理阿里千问请求
-const handleOpenAIStream = async (messages: MsgItem[], model = 'qwen-plus', provider: ProviderParam) => {
+const handleOpenAIStream = async (
+  messages: MsgItem[],
+  model = 'qwen-plus',
+  provider: Pick<ProviderParam, 'apiKey' | 'baseURL'>
+) => {
   const sendJson = messages.map((item) => {
     return {
       role: item.role,
@@ -165,7 +211,7 @@ const handleOpenAIStream = async (messages: MsgItem[], model = 'qwen-plus', prov
   })
   try {
     // 添加监听
-    curResMsg = addAssistantMsgItem()
+    curAssistantMsg = await addAssistantMsgItem()
     // 有监听先移除监听
     if (cleanIpcListener) {
       cleanIpcListener()
@@ -176,7 +222,7 @@ const handleOpenAIStream = async (messages: MsgItem[], model = 'qwen-plus', prov
     // 发送请求
     await electronIpcApi.askModel({ messages: sendJson, model, provider })
   } catch (error) {
-    console.log(error)
+    console.error(error)
   } finally {
     // 有监听先移除监听
     if (cleanIpcListener) {
@@ -185,38 +231,30 @@ const handleOpenAIStream = async (messages: MsgItem[], model = 'qwen-plus', prov
   }
 }
 // 添加对话标题
-const handleChatTitle = (msg: string) => {
-  if (!chatStore?.curChat?.title || chatStore?.curChat?.title === 'New Chat') {
+const handleChatTitle = async (msg: string) => {
+  if (!chatStore?.curChat?.title || chatStore?.curChat?.title === '新对话') {
+    await updateChat({
+      id: chatStore.curChat?.id || '',
+      title: msg,
+    })
     chatStore.curChat && (chatStore.curChat.title = msg)
   }
 }
 // 添加用户消息
-const addUserMsgItem = (content?: string) => {
-  const curMsg: MsgItem = {
-    id: new Date().getTime(),
-    role: 'user',
-    name: '',
-    content: content ?? '',
-    chatId: chatStore.curChat?.id || '',
-  }
+const addUserMsgItem = async (content?: string) => {
+  const curMsg: MsgItem = await addUserMessage(chatStore.curChat?.id || '', content ?? '')
+  console.log('')
   msgList.value = [...msgList.value, curMsg]
   msgStore.addMsg(curMsg)
   return curMsg
 }
 // 添加智能助手初始消息
-const addAssistantMsgItem = (content?: string) => {
-  const resMsg: MsgItem = {
-    id: new Date().getTime() + 1,
-    role: 'assistant',
-    reasoning_content: '',
-    content: content ?? '',
-    chatId: chatStore.curChat?.id || '',
-    showReasoning: true,
-  }
-  msgList.value.push(resMsg)
+const addAssistantMsgItem = async (content?: string) => {
+  const curMsg: MsgItem = await addAssistantMessage(chatStore.curChat?.id || '', content ?? '')
+  msgList.value.push(curMsg)
   // 维护所有msg
-  msgStore.addMsg(resMsg)
-  return resMsg
+  msgStore.addMsg(curMsg)
+  return curMsg
 }
 // // 文字一次性输出版
 // const readJsonFun = (res: any) => {
@@ -234,7 +272,7 @@ const addAssistantMsgItem = (content?: string) => {
 //   // 维护所有msg
 //   msgStore.addMsg(askMsg)
 // }
-const ChartMessageRef = useTemplateRef('ChartMessageRef')
+const ChartMessageRef = useTemplateRef<InstanceType<typeof ChartMessage>>('ChartMessageRef')
 
 // 移除steam流式输出事件监听
 let removeStreamDataListener: any = null
@@ -251,26 +289,37 @@ const removeAllStreamListener = () => {
 const onStreamDataLisitener = () => {
   removeAllStreamListener()
   removeStreamDataListener = electronIpcApi.onStreamData((e: any, data: any) => {
-    const curMsg = msgList.value.find((item) => item?.id === curResMsg?.id)
+    const curMsg = msgList.value.find((item) => item?.id === curAssistantMsg?.id)
     sendLoading.value = false
     console.log('data=', data)
 
     const curContent = data
     curMsg && (curMsg.content += curContent)
     ChartMessageRef.value?.scrollToBottom()
-    // console.log('curResMsg==', curMsg);
+    // console.log('curAssistantMsg==', curMsg);
   })
   removeStreamAbortListener = electronIpcApi.onStreamAbort(() => {
     sendLoading.value = false
     outLoading.value = false
+    updateDBSteamMsg()
   })
   removeStreamEndListener = electronIpcApi.onStreamEnd(() => {
     outLoading.value = false
+    updateDBSteamMsg()
   })
   removeStreamErrorListener = electronIpcApi.onStreamError((msg) => {
     console.error('流式输出出错了：', msg)
     sendLoading.value = false
     outLoading.value = false
+    updateDBSteamMsg()
+  })
+}
+const updateDBSteamMsg = () => {
+  const curMsg = msgList.value.find((item) => item?.id === curAssistantMsg?.id)
+  updateAssistantMsgItemWhenDone({
+    id: curMsg?.id || '',
+    content: curMsg?.content || '',
+    reasoning_content: curMsg?.reasoning_content || '',
   })
 }
 // 正在输出中...
@@ -304,6 +353,7 @@ const readHttpStream = async (res: any) => {
       if (item.startsWith('data: [DONE]')) {
         console.log('输出结束了')
         outLoading.value = false
+        updateDBSteamMsg()
         return
       }
       if (item.startsWith('data:')) {
@@ -323,7 +373,7 @@ const readHttpStream = async (res: any) => {
       const str = curJson.choices?.[0]?.delta?.content || ''
 
       // chunkStr += str
-      const curMsg = msgList.value.find((item) => item.id === curResMsg?.id)
+      const curMsg = msgList.value.find((item) => item.id === curAssistantMsg?.id)
       if (curMsg) {
         curMsg.content += str
         curMsg.reasoning_content += reasoning_str
@@ -349,7 +399,6 @@ const createNewSession = () => {
   chatStore.createChat()
 }
 onMounted(() => {
-  createNewSession()
   // 开启监听读取千问数据
   onStreamDataLisitener()
 })

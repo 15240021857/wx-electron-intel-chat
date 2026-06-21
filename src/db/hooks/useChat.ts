@@ -1,43 +1,50 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { db } from '../indexdb'
 import type { Chat } from '@/types/db'
 import { v4 as uuid } from 'uuid'
+import chatIcon from '@/assets/images/logo-icon-white-bg.png'
+import { ChatItem } from '@/types/chat'
 
 export const useChat = () => {
   const chats = ref<Chat[]>([])
 
   //   获取对话列表
   const getChats = async () => {
-    const list = await db.chats.toArray()
-    console.log('获取对话列表：', list)
+    const list = await db.chats.orderBy('createdAt').reverse().toArray()
     chats.value = list
+    console.log('获取对话列表===：', list)
   }
   //   添加对话
-  const addChat = async (chat: Omit<Chat, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addChat = async (chat: Omit<Chat, 'id' | 'createdAt' | 'updatedAt'>): Promise<Chat> => {
     try {
       console.log('添加对话：', chat)
-      const res = await db.chats.add({
+      const curChat = {
         id: uuid(),
         ...chat,
+        title: chat.title || '新对话',
+        providerIcon: chat.providerIcon || chatIcon,
         createdAt: new Date(),
         updatedAt: new Date(),
-      })
+      }
+      const res = await db.chats.add(curChat)
       console.log('添加成功：', res)
       getChats()
+      return curChat
     } catch (error) {
       console.error('添加对话失败：', error)
+      throw error
     }
   }
   //   修改对话
   const updateChat = async (chat: Partial<Chat> & { id: string }) => {
     try {
-      console.log('修改对话：', chat)
-      const res = await db.chats.update(chat.id, {
+      const newChatProps = {
         ...chat,
         updatedAt: new Date(),
-      })
+      }
+      const res = await db.chats.update(chat.id, newChatProps)
       console.log('修改成功：', res)
-      getChats()
+      await getChats()
     } catch (error) {
       console.error('修改对话失败：', error)
     }
@@ -54,6 +61,18 @@ export const useChat = () => {
       console.error('删除对话失败：', error)
     }
   }
+  // 根据id获取chat
+  const getChatById = async (id: string) => {
+    try {
+      console.log('根据id获取chat：', id)
+      const res = await db.chats.get(id)
+      console.log('获取成功：', res)
+      return res
+    } catch (error) {
+      console.error('获取chat失败：', error)
+      throw error
+    }
+  }
 
   return {
     chats,
@@ -61,5 +80,6 @@ export const useChat = () => {
     addChat,
     updateChat,
     deleteChat,
+    getChatById,
   }
 }

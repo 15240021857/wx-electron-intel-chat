@@ -8,13 +8,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { PopoverArrow,PopoverClose,PopoverContent,PopoverPortal,PopoverRoot,PopoverTrigger } from 'reka-ui'
+import { onMounted, ref } from 'vue'
 import SideBar from './components/SideBar.vue'
 import ChatMain from './components/ChatMain.vue'
+import { bootstrapDBProviders } from './db/bootstrapDB'
 
-const count = ref(0);
+onMounted(() => {
+  bootstrapDBProviders()
+})
 </script>
 
-<style lang='scss' scoped>
-</style>
+<style lang="scss" scoped></style>
