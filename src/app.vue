@@ -11,10 +11,10 @@
 import { onMounted, ref } from 'vue'
 import SideBar from './components/SideBar.vue'
 import ChatMain from './components/ChatMain.vue'
-import { bootstrapDBProviders } from './db/bootstrapDB'
+// import { bootstrapDBProviders } from './db/bootstrapDB'
 
 onMounted(() => {
-  bootstrapDBProviders()
+  // bootstrapDBProviders()
 })
 </script>
 

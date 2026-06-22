@@ -1,27 +1,33 @@
 <template>
-  <div class="w-full">
+  <div class="w-full relative">
     <h2 class="w-full bg-gray-100 h-[52px] flex items-center px-3 border-b border-b-gray-300">
       <span class="font-semibold mr-4">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
       <span class="font-semibold"></span>{{ chatStore.curChat?.title.slice(0, 20) }}
     </h2>
-    <div class="h-[calc(100%-52px-60px)] max-w-3xl mx-auto p-[16px]">
+    <div class="flex flex-col h-[calc(100%-52px)] py-[16px]">
       <!-- 聊天内容区 -->
-      <ChartMessage
-        v-if="msgList?.length > 0"
-        ref="ChartMessageRef"
-        :msg-list="msgList"
-        :request-loading="sendLoading"
-        :out-loading="outLoading"
-      />
+      <div class="flex-1 overflow-auto">
+        <ChartMessage
+          v-if="msgList?.length > 0"
+          ref="ChartMessageRef"
+          class="h-full max-w-3xl mx-auto overflow-visible"
+          :msg-list="msgList"
+          :request-loading="sendLoading"
+          :out-loading="outLoading"
+        />
+      </div>
+
       <!-- 大模型下拉选择框 -->
-      <div v-show="!selectedModel?.value" class="w-full h-full flex flex-row items-center justify-center">
+      <div
+        v-show="!selectedModel?.value"
+        class="w-full h-full flex flex-row items-center justify-center max-w-3xl mx-auto"
+      >
         <GroupSelect ref="GroupSelectRef" @on-select="onModelSelect" />
       </div>
-    </div>
-
-    <!-- 聊天输入框 -->
-    <div class="w-full px-5 box-size max-w-3xl mx-auto">
-      <SearchInput :out-loading="outLoading" @send-msg="onSendmsg" @stop-cur-msg="stopCurMsg" />
+      <!-- 聊天输入框 -->
+      <div class="w-full px-5 box-size max-w-3xl mx-auto relative">
+        <SearchInput :out-loading="outLoading" @send-msg="onSendmsg" @stop-cur-msg="stopCurMsg" />
+      </div>
     </div>
   </div>
 </template>

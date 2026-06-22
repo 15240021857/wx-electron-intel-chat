@@ -1,8 +1,8 @@
 <template>
-  <div ref="contentRef" class="w-full pr-50px h-full overflow-y-auto px-5" @scroll="onScroll">
+  <div ref="contentRef" class="w-full pr-50px h-full px-5 py-2" @scroll="onScroll">
     <div v-for="item in msgList" :key="item.id" class="">
       <!-- 用户消息 -->
-      <div v-if="item.role === 'user'" class="flex justify-end items-center mt-[16px] pl-[45px]">
+      <div v-if="item.role === 'user'" class="flex justify-end items-center mb-[16px] pl-[45px]">
         <div class="bg-[#F0F0F0] rounded-[8px] p-[8px]" v-text="item.content"></div>
         <Icon
           icon="ant-design:user-outlined"

@@ -20,6 +20,7 @@ import { onMounted, ref } from 'vue'
 import { useProvider } from '@/db/hooks/useProvider'
 import { useModel } from '@/db/hooks/useModel'
 import { useChat } from '@/db/hooks/useChat'
+import { bootstrapDBProviders } from '@/db/bootstrapDB'
 const { updateChat } = useChat()
 
 const emits = defineEmits<{
@@ -62,6 +63,9 @@ const providerList = ref<ProviderItem[]>([
 ])
 // 获取启用的供应商
 const getProviderList = async () => {
+  if (providerList.value?.length === 0) {
+    await bootstrapDBProviders()
+  }
   await getProviders({ enabled: 1 })
   await getModels({ enabled: 1 })
   providerList.value = providers.value.map((item) => {
