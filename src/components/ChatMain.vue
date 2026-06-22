@@ -19,7 +19,7 @@
 
       <!-- 大模型下拉选择框 -->
       <div
-        v-show="!selectedModel?.value"
+        v-show="!(msgList?.length > 0)"
         class="w-full h-full flex flex-row items-center justify-center max-w-3xl mx-auto"
       >
         <GroupSelect ref="GroupSelectRef" @on-select="onModelSelect" />
@@ -38,8 +38,8 @@ import SearchInput from './components/SearchInput.vue'
 import GroupSelect from './components/GroupSelect.vue'
 import ChartMessage from './components/ChartMessage.vue'
 import { callModelHttpAPI } from '@/api/chat'
-import { ModelItem, MsgItem, ProviderParam } from '@/types/chat'
-import { Message, Model } from '@/types/db'
+import { MsgItem, ProviderParam } from '@/types/chat'
+import { Model } from '@/types/db'
 import { useChatStore } from '@/store/useChatStore'
 import { useMsgStore } from '@/store/useMsgStore'
 import { useMessage } from '@/db/hooks/useMessage'
@@ -47,7 +47,7 @@ import { useChat } from '@/db/hooks/useChat'
 import { useModel } from '@/db/hooks/useModel'
 
 const { getMessagesByChatId, addUserMessage, addAssistantMessage, updateMessage } = useMessage()
-const { getChatById, updateChat } = useChat()
+const { updateChat } = useChat()
 
 const chatStore = useChatStore()
 const msgStore = useMsgStore()

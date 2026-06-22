@@ -42,17 +42,19 @@
         class="text-gray-900 hover:text-gray-600 active:text-gray-400 select-none"
         width="30"
         height="30"
+        @click="changePage('/settings')"
       />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { onMounted } from 'vue'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport, ScrollAreaCorner } from 'reka-ui'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
 import { ChatItem } from '@/types/chat'
+import { useRouter, useRoute } from 'vue-router'
 
 // 对话数据类型
 const chatStore = useChatStore()
@@ -64,9 +66,18 @@ const getHistoryList = async () => {
 const createChatFun = async () => {
   chatStore.createChat()
 }
+const route = useRoute()
+const router = useRouter()
 // 切换对话
 const changeChatFun = (item: ChatItem) => {
+  const isHomePage = route.path === '/'
+  if (!isHomePage) {
+    router.push('/')
+  }
   chatStore.setcurChat(item)
+}
+const changePage = (path: string) => {
+  router.push(path)
 }
 onMounted(() => {
   getHistoryList()

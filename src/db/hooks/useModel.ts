@@ -5,13 +5,13 @@ import { v4 as uuid } from 'uuid'
 
 export const useModel = () => {
   const models = ref<Model[]>([])
-  const getModels = async (params: Partial<Model>) => {
+  const getModels = async (params?: Partial<Model>) => {
     let list = await db.models.toArray()
     console.log('获取模型列表：', list)
-    if (params.providerId) {
+    if (params?.providerId) {
       list = list.filter((item) => item.providerId === params.providerId)
     }
-    if (params.enabled !== undefined) {
+    if (params?.enabled !== undefined) {
       list = list.filter((item) => item.enabled === params.enabled)
     }
     models.value = list

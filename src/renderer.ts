@@ -30,8 +30,9 @@ import { createApp } from 'vue'
 import App from './app.vue'
 import './index.css'
 import { setupStore } from '@/store'
+import router from '@/router'
 const app = createApp(App)
-
+app.use(router)
 setupStore(app)
 app.mount('#app')
 console.log('👋 This message is being logged by "renderer.ts", included via Vite')
