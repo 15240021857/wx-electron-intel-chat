@@ -5,7 +5,7 @@ import SettingBase from './components/SettingBase.vue'
 </script>
 
 <template>
-  <div class="w-full pt-15">
+  <div class="w-full py-10 h-full overflow-y-auto">
     <TabsRoot
       class="flex flex-col md:w-[70%] sm:w-[300px] max-w-3xl mx-auto shadow-sm rounded-lg border"
       default-value="tab1"

@@ -13,7 +13,7 @@ export const useProvider = () => {
   //   enabledProviders.value = list
   // }
   const getProviders = async (condition?: Partial<Provider>) => {
-    let list = await db.providers.orderBy('createdAt').toArray()
+    let list = await db.providers.orderBy('createdAt').reverse().toArray()
     console.log('获取厂商列表：', list)
     if (condition?.enabled !== undefined) {
       list = list.filter((item) => item.enabled === condition.enabled)
@@ -33,8 +33,14 @@ export const useProvider = () => {
       const res = await db.providers.add(newItem)
       providers.value = [...providers.value, newItem]
       console.log('添加成功：', res)
+      return {
+        code: 200,
+        message: 'success',
+        data: res,
+      }
     } catch (error) {
       console.error('添加厂商失败：', error)
+      throw error
     }
   }
   //   修改厂商
@@ -54,8 +60,14 @@ export const useProvider = () => {
           ...newProp,
         }
       }
+      return {
+        code: 200,
+        message: 'success',
+        data: res,
+      }
     } catch (error) {
       console.error('修改厂商失败：', error)
+      throw error
     }
   }
 
@@ -64,10 +76,15 @@ export const useProvider = () => {
     try {
       console.log('删除厂商：', id)
       const res = await db.providers.delete(id)
-      console.log('删除成功：', res)
       providers.value = providers.value.filter((item) => item.id !== id)
+      return {
+        code: 200,
+        message: 'success',
+        data: res,
+      }
     } catch (error) {
       console.error('删除厂商失败：', error)
+      throw error
     }
   }
   // 厂商开关 - enabled：希望改成的状态 0-禁用，1-启用

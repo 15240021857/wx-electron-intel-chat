@@ -1,14 +1,34 @@
 @import 'tailwindcss';
 @config '../tailwind.config.js';
+:root {
+  --tw-primary: rgba(31, 127, 62, 1);
+  --tw-primary-hover: oklch(44.8% 0.119 151.328);
+  --tw-primary-blank: rgba(234, 255, 242, 1);
+  --tw-primary-blank-hover: rgba(207, 243, 221, 0.6);
+  --tw-primary-blank-active: rgba(207, 243, 221, 0.9);
+}
 @theme {
-  --color-primary: rgba(31, 127, 62, 1);
-  --color-primary-blank: rgba(234, 255, 242, 1);
-  --color-primary-blank-hover: rgba(207, 243, 221, 0.6);
-  --color-primary-blank-active: rgba(207, 243, 221, 0.9);
+  --color-primary: var(--tw-primary);
+  --color-primary-hover: var(--tw-primary-hover);
+  --color-primary-blank: var(--tw-primary-blank);
+  --color-primary-blank-hover: var(--tw-primary-blank-hover);
+  --color-primary-blank-active: var(--tw-primary-blank-active);
 }
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   /* margin: auto; */
   /* max-width: 38rem; */
   /* padding: 2rem; */
+}
+@layer utilities {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-hover text-sm text-white px-4 py-1 rounded-lg cursor-pointer;
+  }
+  /* 主题空白线性按钮，如新建对话，保存设置 */
+  .btn-blank-primary {
+    @apply w-full bg-primary-blank border-1 border-primary rounded-[4px] text-primary text-base py-1 mb-2 mt-1 hover:bg-primary-blank-hover active:bg-primary-blank-active cursor-pointer flex flex-row items-center justify-center gap-[2px];
+  }
+  .switch-primary {
+    @apply w-[32px] h-[20px] cursor-pointer shadow-sm flex data-[state=unchecked]:bg-stone-300 data-[state=checked]:bg-green-800 dark:data-[state=unchecked]:bg-stone-800 dark:data-[state=checked]:bg-green-700 border border-stone-300 data-[state=checked]:border-stone-700 dark:border-stone-700 rounded-full relative transition-[background] focus-within:outline-none focus-within:shadow-[0_0_0_1px] focus-within:border-stone-800 focus-within:shadow-stone-800;
+  }
 }

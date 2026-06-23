@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'node:path'
 import started from 'electron-squirrel-startup'
 import BigModel from './electron/main/bigModel'
@@ -88,4 +88,22 @@ ipcMain.handle('ask-model', async (event, { messages, model, provider }) => {
 // 停止流式输出，节省tokens
 ipcMain.on('stop-stream', (event, arg) => {
   bigModel.stopStream()
+})
+// 打开删除确认框
+ipcMain.handle('open-delete-confirm', async (event, arg) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win || win.isDestroyed()) {
+    return
+  }
+  const res = await dialog.showMessageBox(win, {
+    type: 'warning', // 图标：none/info/warning/error/question
+    title: '删除确认',
+    message: '是否确认删除当前条目？',
+    detail: '删除后数据将永久丢失，无法找回！',
+    buttons: ['取消', '确认删除'], // 按钮顺序
+    defaultId: 0, // 默认选中取消按钮
+    cancelId: 0,
+  })
+  // response 是点击按钮的索引：0=取消，1=确认删除
+  return res.response === 1
 })

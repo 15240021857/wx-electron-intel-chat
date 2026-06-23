@@ -2,10 +2,7 @@
   <div class="bg-[rgba(241,243,244,1)] w-[290px] h-full flex flex-col justify-between p-2 border-r border-r-gray-300">
     <!-- 新建对话 -->
     <div class="w-full">
-      <button
-        class="w-full bg-primary-blank border-1 border-primary rounded-[4px] text-primary text-md py-1 mb-2 mt-1 hover:bg-primary-blank-hover active:bg-primary-blank-active cursor-pointer flex flex-row items-center justify-center gap-[2px]"
-        @click="createChatFun"
-      >
+      <button class="btn-blank-primary" @click="createChatFun">
         <Icon icon="ant-design:aliwangwang-outlined" width="26" height="26" />
         新建对话
       </button>
