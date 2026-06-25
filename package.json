@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
+    "@internationalized/number": "^3.6.7",
     "@radix-ui/colors": "^3.0.0",
     "@tailwindcss/vite": "^4.2.1",
     "dexie": "^4.4.4",

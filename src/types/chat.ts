@@ -18,6 +18,9 @@ export interface ModelItem {
   label: string
   value: string
   apiType: 'http' | 'openAI'
+  enabled?: 0 | 1
+  providerId?: number | string
+  maxTokens?: number
 }
 // 厂商 带模型列表
 export type ProviderItem = Provider & {
@@ -25,3 +28,9 @@ export type ProviderItem = Provider & {
 }
 // 供应商核心字段
 export type ProviderParam = Pick<ProviderItem, 'id' | 'apiKey' | 'baseURL'>
+// 发消息参数
+export interface SendMsgParams {
+  msg: string
+  image_url?: string[]
+  video_url?: string[]
+}

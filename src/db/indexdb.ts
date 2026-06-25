@@ -13,11 +13,11 @@ export class ChatDB extends Dexie {
     // 数据库名称
     super('ai-chat-db')
     // 数据库版本与表 及其索引
-    this.version(3).stores({
+    this.version(1).stores({
       chats: 'id, title, providerId, modelId, createdAt, updatedAt',
       messages: 'id, chatId, content, role, createdAt',
       providers: 'id, enabled, createdAt',
-      models: 'id, providerId, [providerId+enabled], enabled',
+      models: 'id, providerId, [providerId+enabled], enabled, createdAt',
       settings: 'id',
     })
   }

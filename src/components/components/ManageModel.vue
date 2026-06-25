@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, useTemplateRef } from 'vue'
 import { Icon } from '@iconify/vue'
 import {
   AccordionContent,
@@ -9,19 +9,27 @@ import {
   AccordionTrigger,
   SwitchRoot,
   SwitchThumb,
+  Label,
 } from 'reka-ui'
-
 import { useProvider } from '@/db/hooks/useProvider'
-
 import { useModel } from '@/db/hooks/useModel'
 import { ProviderItem } from '@/types/chat'
 import { ApiResult } from '../../types/global'
-const { providers, getProviders, addProvider, updateProvider, deleteProvider } = useProvider()
-const { models, getModels } = useModel()
+import ModelDialog from './components/ModelDialog.vue'
+import { Model } from '@/types/db'
+import { useProviderStore } from '@/store/useProviderStore'
+
+const { providers, getProviders, addProvider, updateProvider, deleteProvider, toggleProvider } = useProvider()
+const { models, getModels, deleteModel, bulkPutModel, toggleModel } = useModel()
 const providerList = ref<ProviderItem[]>([])
 const activeId = ref<string>('')
 const getProvidersFun = async () => {
   await getProviders()
+  await getModelsOfProvider()
+  activeId.value = providerList.value[0]?.id
+}
+// 获取供应商的模型列表
+const getModelsOfProvider = async () => {
   await getModels()
   console.log('providers==', providers.value)
   console.log('models==', models.value)
@@ -31,7 +39,6 @@ const getProvidersFun = async () => {
       modelList: models.value.filter((model) => model.providerId === item.id),
     }
   })
-  activeId.value = providerList.value[0].id
 }
 // 是否新增
 const isAdding = ref(false)
@@ -93,14 +100,33 @@ const saveProvider = async () => {
       const res = await updateProvider(ProviderParam)
       if (res.code === 200) {
         console.log('修改成功')
-        getProvidersFun()
       } else {
         console.log('修改失败')
       }
+      //   修改其模型
+      console.log('修改其模型', modelList)
+      const bulkPutRes = await bulkPutModel(modelList)
+      if (bulkPutRes.code === 200) {
+        console.log('修改模型成功')
+      } else {
+        console.log('修改模型失败')
+      }
+      getProvidersFun()
     }
   }
 }
-// const { ElectronIpcApi } = window as any
+const providerStore = useProviderStore()
+// 启用禁用供应商
+const toggleProviderFun = async (providerId: string, enabled: 0 | 1) => {
+  const curEnabled = enabled === 1 ? 0 : 1
+  const res = await toggleProvider(providerId, curEnabled)
+  if (res.code === 200) {
+    providerStore.getEnabledProviderList()
+    console.log('修改成功')
+  } else {
+    console.log('修改失败')
+  }
+}
 // 打开删除弹窗
 const openDeleteProvider = (id: string) => {
   window.electronIpcApi.openDeleteConfrim().then((res: boolean) => {
@@ -118,6 +144,55 @@ const deleteProviderFun = async (id: string) => {
     getProvidersFun()
   } else {
     console.log('删除失败')
+  }
+}
+// 模型管理
+const onModelSuccess = (providerId: string) => {
+  console.log('onModelSuccess', providerId)
+  //   更新该厂商的模型列表
+  getModelsOfProvider()
+}
+// 打开模型新增/编辑弹窗
+const modelDialogRef = useTemplateRef<InstanceType<typeof ModelDialog>>('modelDialogRef')
+const modelDialogType = ref<'add' | 'edit'>('add')
+interface ModelDialogParam {
+  model?: Model
+  provider?: ProviderItem
+}
+const openModelDialog = (type: 'add' | 'edit', param: ModelDialogParam) => {
+  modelDialogType.value = type
+  if (type === 'edit') {
+    modelDialogRef.value?.openDialog(type, param)
+  }
+  if (type === 'add') {
+    modelDialogRef.value?.openDialog(type, param)
+  }
+}
+// 打开删除模型
+const openDeleteModel = (id: string) => {
+  window.electronIpcApi.openDeleteConfrim().then(async (res: boolean) => {
+    if (res) {
+      console.log('删除模型', id)
+      const res = await deleteModel(id)
+      if (res.code === 200) {
+        console.log('删除成功')
+        getProvidersFun()
+      } else {
+        console.log('删除失败')
+      }
+    }
+  })
+}
+
+// 启用禁用供应商
+const toggleModelFun = async (modelId: string, enabled: 0 | 1) => {
+  const curEnabled = enabled === 1 ? 0 : 1
+  const res = await toggleModel(modelId, curEnabled)
+  if (res.code === 200) {
+    providerStore.getEnabledProviderList()
+    console.log('修改成功')
+  } else {
+    console.log('修改失败')
   }
 }
 onMounted(() => {
@@ -161,27 +236,28 @@ onMounted(() => {
                 />
               </div>
               <div class="flex flex-row items-center justify-end gap-x-2">
+                <!-- 删除 -->
+                <Icon
+                  v-if="!isAdding"
+                  icon="ant-design:delete-twotone"
+                  class="text-gray-600 hover:text-gray-800 active:text-gray-400 select-none cursor-pointer"
+                  width="26"
+                  height="26"
+                  @click="openDeleteProvider(item.id)"
+                />
                 <!-- 开关 -->
                 <SwitchRoot
                   id="airplane-mode"
                   v-model="item.enabled"
                   :true-value="1"
                   :false-value="0"
-                  class="switch-primary"
+                  class="switch-primary ml-1"
+                  @click="toggleProviderFun(item.id, item.enabled)"
                 >
                   <SwitchThumb
                     class="w-3.5 h-3.5 my-auto bg-white text-xs flex items-center justify-center shadow-xl rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-full"
                   />
                 </SwitchRoot>
-                <!-- 删除 -->
-                <Icon
-                  v-if="!isAdding"
-                  icon="ant-design:delete-outlined"
-                  class="text-gray-600 hover:text-gray-800 active:text-gray-400 select-none cursor-pointer"
-                  width="26"
-                  height="26"
-                  @click="openDeleteProvider(item.id)"
-                />
               </div>
             </div>
             <AccordionTrigger
@@ -203,56 +279,77 @@ onMounted(() => {
                 <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="apiKey">
                   apiKey
                 </Label>
-                <input
-                  id="apiKey"
-                  v-model="item.apiKey"
-                  class="bg-white border inline-flex h-[35px] w-full max-w-[300px] appearance-none items-center justify-center rounded-lg px-[10px] text-sm leading-none shadow-sm outline-none focus:shadow-[0_0_0_2px_black] selection:color-white selection:bg-blackA9"
-                  type="text"
-                />
+                <input id="apiKey" v-model="item.apiKey" class="input-black-util" type="text" />
               </fieldset>
 
               <fieldset class="flex flex-row items-center justify-between">
                 <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="baseURL">
                   baseURL
                 </Label>
-                <input
-                  id="baseURL"
-                  v-model="item.baseURL"
-                  class="bg-white border inline-flex h-[35px] w-full max-w-[300px] appearance-none items-center justify-center rounded-lg px-[10px] text-sm leading-none shadow-sm outline-none focus:shadow-[0_0_0_2px_black] selection:color-white selection:bg-blackA9"
-                  type="text"
-                />
+                <input id="baseURL" v-model="item.baseURL" class="input-black-util" type="text" />
               </fieldset>
               <fieldset class="flex flex-row items-center justify-between">
                 <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="testConnect">
                   连接性测试
                 </Label>
-                <button id="testConnect" class="btn-primary">测试</button>
+                <button id="testConnect" class="btn-blank-primary-small">测试</button>
               </fieldset>
-              <section class="flex flex-col gap-y-2">
+              <!-- 厂商下的模型 -->
+              <section v-if="!isAdding" class="flex flex-col gap-y-2">
                 <div class="flex flex-row items-center justify-between">
                   <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="apiKey">
                     模型列表
                   </Label>
+                  <div>
+                    <!-- 新增模型 -->
+                    <Icon
+                      icon="ant-design:plus-circle-twotone"
+                      class="text-gray-600 hover:text-gray-800 active:text-gray-400 select-none cursor-pointer"
+                      width="26"
+                      height="26"
+                      @click="openModelDialog('add', { provider: item })"
+                    />
+                  </div>
                 </div>
                 <div class="flex flex-col gap-y-2">
-                  <template v-for="model in item.modelList" :key="model.id">
+                  <template v-if="item.modelList?.length > 0">
                     <div
+                      v-for="model in item.modelList"
+                      :key="model.id"
                       class="flex flex-row justify-between items-center border-b border-dashed border-color-gray-200 py-1"
                     >
                       <span>{{ model.label }}</span>
-                      <SwitchRoot
-                        id="airplane-mode"
-                        v-model="model.enabled"
-                        :true-value="1"
-                        :false-value="0"
-                        class="switch-primary"
-                      >
-                        <SwitchThumb
-                          class="w-3.5 h-3.5 my-auto bg-white text-xs flex items-center justify-center shadow-xl rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-full"
+                      <div class="flex flex-row items-center justify-end gap-x-[10px]">
+                        <Icon
+                          icon="ant-design:edit-twotone"
+                          class="text-gray-600 hover:text-gray-800 active:text-gray-400 select-none cursor-pointer"
+                          width="26"
+                          height="26"
+                          @click="openModelDialog('edit', { model: model, provider: item })"
                         />
-                      </SwitchRoot>
+                        <Icon
+                          icon="ant-design:delete-twotone"
+                          class="text-gray-600 hover:text-gray-800 active:text-gray-400 select-none cursor-pointer"
+                          width="26"
+                          height="26"
+                          @click="openDeleteModel(model?.id)"
+                        />
+                        <SwitchRoot
+                          id="airplane-mode"
+                          v-model="model.enabled"
+                          :true-value="1"
+                          :false-value="0"
+                          class="switch-primary ml-1"
+                          @click="toggleModelFun(model.id, model.enabled)"
+                        >
+                          <SwitchThumb
+                            class="w-3.5 h-3.5 my-auto bg-white text-xs flex items-center justify-center shadow-xl rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-full"
+                          />
+                        </SwitchRoot>
+                      </div>
                     </div>
                   </template>
+                  <span v-else class="flex flex-row items-center justify-center py-2">暂无模型</span>
                 </div>
               </section>
               <div class="flex flex-row justify-between items-center gap-x-2">
@@ -270,6 +367,12 @@ onMounted(() => {
         </AccordionItem>
       </template>
     </AccordionRoot>
+    <ModelDialog
+      ref="modelDialogRef"
+      :show-btn="false"
+      :dialog-title="modelDialogType === 'add' ? '新增模型' : '编辑模型'"
+      @success="onModelSuccess"
+    ></ModelDialog>
   </div>
 </template>
 

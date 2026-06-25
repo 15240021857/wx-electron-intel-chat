@@ -1,8 +1,9 @@
 <template>
   <div class="w-full relative">
     <h2 class="w-full bg-gray-100 h-[52px] flex items-center px-3 border-b border-b-gray-300">
-      <span class="font-semibold mr-4">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
-      <span class="font-semibold"></span>{{ chatStore.curChat?.title.slice(0, 20) }}
+      <span class="font-semibold">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
+      <span class="mx-1">——</span>
+      <span class="font-semibold">{{ chatStore.curChat?.title.slice(0, 20) }}</span>
     </h2>
     <div class="flex flex-col h-[calc(100%-52px)] py-[16px]">
       <!-- 聊天内容区 -->
@@ -38,7 +39,7 @@ import SearchInput from './components/SearchInput.vue'
 import GroupSelect from './components/GroupSelect.vue'
 import ChartMessage from './components/ChartMessage.vue'
 import { callModelHttpAPI } from '@/api/chat'
-import { MsgItem, ProviderParam } from '@/types/chat'
+import { MsgItem, ProviderParam, SendMsgParams } from '@/types/chat'
 import { Model } from '@/types/db'
 import { useChatStore } from '@/store/useChatStore'
 import { useMsgStore } from '@/store/useMsgStore'
@@ -61,8 +62,6 @@ const msgList = ref<MsgItem[]>([])
 const selectedModel = ref<Model>()
 const selectedProvider = ref<ProviderParam>()
 const onModelSelect = (model: { selectedModel: Model; selectedProvider: ProviderParam }) => {
-  console.log('model==', model)
-
   selectedModel.value = model?.selectedModel
   selectedProvider.value = model?.selectedProvider
 }
@@ -85,11 +84,12 @@ watch(
           showReasoning: true,
         }
       })
+      console.log(`%c ====${chatStore.curChat?.modelId}`, 'color: skyblue')
       // 再拿到模型信息和供应商信息
       if (chatStore.curChat?.modelId) {
         const curModel = await getModelById(chatStore.curChat?.modelId as string)
         // 直接调下拉组件的方法获取当前模型和厂商
-        GroupSelectRef.value?.setModelAndProviderByModel(curModel?.value || '')
+        GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '')
       } else {
         clearSelectedModel()
       }
@@ -132,19 +132,21 @@ const sendLoading = ref(false)
 // 流式输出中
 const outLoading = ref(false)
 
-const onSendmsg = async (msg: string | undefined) => {
+const onSendmsg = async (sendParam: SendMsgParams) => {
+  const { msg, image_url, video_url } = sendParam
+  console.log('image_url==========', image_url)
   if (!selectedModel.value?.value) {
     alert('请选择模型')
     return
   }
 
   curAssistantMsg = null
-  if (!msg) return
+  if (!msg && image_url?.length === 0 && video_url?.length === 0) return
   // 处理请求取消
   stopCurMsg()
   abortController = new AbortController()
   // 添加msg
-  await addUserMsgItem(msg)
+  await addUserMsgItem(sendParam)
   // 添加标题
   handleChatTitle(msg)
   outLoading.value = true
@@ -153,7 +155,6 @@ const onSendmsg = async (msg: string | undefined) => {
   if (!selectedProvider.value) {
     return
   }
-  console.log('apiType==', apiType)
   console.log('msgList.value==', msgList.value)
   if (apiType === 'http') {
     // http请求方式
@@ -203,18 +204,67 @@ const handleHttpStream = async (messages: MsgItem[], model = 'glm-4.7-flash', pr
     }
   }
 }
+const handleMessagesParams = (messages: MsgItem[]) => {
+  return messages.map((item) => {
+    let curItem: any
+    let curContent: any
+    if (item.image_url?.length) {
+      const image_url_list = item.image_url.map((item) => {
+        return {
+          type: 'image_url',
+          image_url: item,
+        }
+      })
+      curContent = image_url_list
+      item.content &&
+        curContent.push({
+          type: 'text',
+          text: item.content,
+        })
+      curItem = {
+        role: item.role,
+        content: curContent,
+      }
+    } else if (item.video_url?.length) {
+      const video_url_list = item.video_url.map((item) => {
+        return {
+          type: 'video_url',
+          video_url: item,
+        }
+      })
+      curContent = video_url_list
+      item.content &&
+        curContent.push({
+          type: 'text',
+          text: item.content,
+        })
+      curItem = {
+        role: item.role,
+        content: curContent,
+      }
+    } else {
+      curItem = {
+        role: item.role,
+        content: item.content,
+      }
+    }
+    return curItem
+  })
+}
 // 处理阿里千问请求
 const handleOpenAIStream = async (
   messages: MsgItem[],
   model = 'qwen-plus',
   provider: Pick<ProviderParam, 'apiKey' | 'baseURL'>
 ) => {
-  const sendJson = messages.map((item) => {
-    return {
-      role: item.role,
-      content: item.content,
-    }
-  })
+  // const sendJson = messages.map((item) => {
+  //   return {
+  //     role: item.role,
+  //     content: item.content,
+  //   }
+  // })
+  const sendJson = handleMessagesParams(messages)
+  console.log('sendJson=======================', sendJson)
   try {
     // 添加监听
     curAssistantMsg = await addAssistantMsgItem()
@@ -247,9 +297,8 @@ const handleChatTitle = async (msg: string) => {
   }
 }
 // 添加用户消息
-const addUserMsgItem = async (content?: string) => {
-  const curMsg: MsgItem = await addUserMessage(chatStore.curChat?.id || '', content ?? '')
-  console.log('')
+const addUserMsgItem = async (msgParams: SendMsgParams) => {
+  const curMsg: MsgItem = await addUserMessage(chatStore.curChat?.id || '', msgParams)
   msgList.value = [...msgList.value, curMsg]
   msgStore.addMsg(curMsg)
   return curMsg

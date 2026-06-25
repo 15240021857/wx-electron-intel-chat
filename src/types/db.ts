@@ -8,6 +8,7 @@ export interface Chat {
   providerIcon?: string
   createdAt: Date
   updatedAt: Date
+  pid?: string // 子对话，用于多模型比较
 }
 // 消息
 export interface Message {
@@ -16,9 +17,16 @@ export interface Message {
   chatId: string
   role: 'user' | 'assistant' | 'system'
   content: string
+  image_url?: string[] // 视觉理解 - 图片
+  video_url?: string[] // 视频理解 - 视频
   createdAt: Date
   reasoning_content?: string
   showReasoning?: boolean
+}
+
+export interface CapacityParams {
+  image_url?: string[]
+  video_url?: string[]
 }
 // 提供商
 export interface Provider {
@@ -40,6 +48,8 @@ export interface Model {
   enabled: 0 | 1 // 0-禁用，1-启用
   apiType: 'http' | 'openAI'
   maxTokens?: number
+  createdAt: Date
+  capacity: ('text' | 'image' | 'video')[] // 能力
 }
 // 偏好设置
 export interface Setting {

@@ -6,8 +6,8 @@
       @change="onchange"
     >
       <option value="" disabled selected>请选择智能体</option>
-      <optgroup v-for="item in providerList" :key="item.id" :label="item.label">
-        <option v-for="model in item.modelList" :key="model.value" :value="model.value" :label="model.label"></option>
+      <optgroup v-for="item in providerStore.enabledProviderList" :key="item.id" :label="item.label">
+        <option v-for="model in item.modelList" :key="model.value" :value="model.id" :label="model.label"></option>
       </optgroup>
     </select>
   </div>
@@ -20,14 +20,13 @@ import { onMounted, ref } from 'vue'
 import { useProvider } from '@/db/hooks/useProvider'
 import { useModel } from '@/db/hooks/useModel'
 import { useChat } from '@/db/hooks/useChat'
-import { bootstrapDBProviders } from '@/db/bootstrapDB'
+import { useProviderStore } from '@/store/useProviderStore'
+import { Model } from '@/types/db'
 const { updateChat } = useChat()
 
 const emits = defineEmits<{
   (e: 'onSelect', model: { selectedModel: ModelItem | null; selectedProvider: ProviderParam | null }): void
 }>()
-const { getProviders, providers } = useProvider()
-const { getModels, models } = useModel()
 const providerList = ref<ProviderItem[]>([
   // {
   //   id: '1',
@@ -62,31 +61,20 @@ const providerList = ref<ProviderItem[]>([
   // },
 ])
 // 获取启用的供应商
+const providerStore = useProviderStore()
 const getProviderList = async () => {
-  if (providerList.value?.length === 0) {
-    await bootstrapDBProviders()
-  }
-  await getProviders({ enabled: 1 })
-  await getModels({ enabled: 1 })
-  providerList.value = providers.value.map((item) => {
-    return {
-      ...item,
-      modelList: models.value.filter((model) => {
-        return model.providerId === item.id
-      }),
-    }
-  })
+  providerStore.getEnabledProviderList()
 }
 
 const chatStore = useChatStore()
 // 根据选中模型拿到当前模型和供应商
-const setModelAndProviderByModel = (selectedModel: string) => {
+const setModelAndProviderByModel = (selectedModelId: string) => {
   // 通知父组件
   let curModel = null
   let curProvider = null
-  for (let provider of providerList.value) {
+  for (let provider of providerStore.enabledProviderList) {
     for (let model of provider.modelList) {
-      if (model.value === selectedModel) {
+      if (model.id === selectedModelId) {
         curModel = model
         curProvider = {
           id: provider.id,
@@ -98,8 +86,6 @@ const setModelAndProviderByModel = (selectedModel: string) => {
       }
     }
   }
-  // console.log('curModel==', curModel)
-  // console.log('curProvider==', curProvider)
 
   // 更新当前chat的model
   if (chatStore.curChat) {
@@ -112,8 +98,8 @@ const setModelAndProviderByModel = (selectedModel: string) => {
     chatStore.curChat.providerId = curProvider?.id || ''
   }
   emits('onSelect', {
-    selectedModel: curModel,
-    selectedProvider: curProvider,
+    selectedModel: curModel || ({} as Model),
+    selectedProvider: curProvider || ({} as ProviderParam),
   })
 }
 // 拿到当前的模型名+请求方式

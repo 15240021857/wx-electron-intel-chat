@@ -88,8 +88,9 @@ export const useProvider = () => {
     }
   }
   // 厂商开关 - enabled：希望改成的状态 0-禁用，1-启用
-  const toggleProvider = (id: string, enabled: 0 | 1) => {
-    updateProvider({ id, enabled })
+  const toggleProvider = async (id: string, enabled: 0 | 1) => {
+    const res = await updateProvider({ id, enabled })
+    return res
     // 是否更新providers列表中的该provider的enabled状态
     // const curIndex = providers.value.findIndex((item) => item.id === id)
     // if (curIndex !== -1) {

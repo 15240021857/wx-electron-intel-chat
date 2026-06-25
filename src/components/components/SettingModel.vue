@@ -1,13 +1,40 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import WxSelect from '../wx-reka/WxSelect.vue'
-import { Result } from '@/types/settings.js'
+import { Option, Result } from '@/types/settings'
 import ManageModel from './ManageModel.vue'
+import { useProviderStore } from '@/store/useProviderStore'
+// import
+const providerStore = useProviderStore()
+// 默认模型
 const defaultModelId = ref('')
+const options = computed<Option[]>(() => {
+  return providerStore.enabledProviderList.map((item) => {
+    return {
+      label: item.label,
+      value: item.id,
+      children: item.modelList.map((model) => {
+        return {
+          label: model.label,
+          value: model.id,
+        }
+      }),
+    }
+  })
+})
 
 const onDefaultModelChange = (res: Result) => {
+  console.log('defaultModelId==', defaultModelId.value)
+  // 这里修改全局设置
   console.log('onDefaultModelChange', res)
 }
+const getProviderListFun = async () => {
+  await providerStore.getEnabledProviderList()
+  // options.value =
+}
+onMounted(() => {
+  getProviderListFun()
+})
 </script>
 
 <template>
@@ -17,7 +44,8 @@ const onDefaultModelChange = (res: Result) => {
       <label class="text-md leading-none text-green12 block" for="defaultModel"> 默认模型 </label>
       <WxSelect
         id="defaultModel"
-        :my-value="defaultModelId"
+        v-model="defaultModelId"
+        :options="options"
         placeholder="请选择默认模型"
         @on-change="onDefaultModelChange"
       />

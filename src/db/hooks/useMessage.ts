@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { db } from '../indexdb'
-import type { Chat, Message } from '@/types/db'
+import type { CapacityParams, Chat, Message } from '@/types/db'
+import { SendMsgParams } from '@/types/chat'
 import { v4 as uuid } from 'uuid'
 
 export const useMessage = () => {
@@ -17,15 +18,20 @@ export const useMessage = () => {
     console.log('获取消息列表：', list)
     return list
   }
+
   //   添加用户消息
-  const addUserMessage = async (chatId: string, content: string) => {
+  const addUserMessage = async (chatId: string, msgParams: SendMsgParams) => {
     try {
+      const { msg: content, image_url, video_url } = msgParams
       console.log('添加消息：', chatId, content)
       const newMsg: Message = {
         id: uuid(),
         chatId,
         role: 'user',
         content,
+        // 视觉理解
+        image_url: image_url || [],
+        video_url: video_url || [],
         createdAt: new Date(),
       }
       const res = await db.messages.add(newMsg)

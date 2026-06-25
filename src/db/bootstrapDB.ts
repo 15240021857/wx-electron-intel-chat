@@ -54,6 +54,8 @@ export const bootstrapDBProviders = async () => {
         value: 'glm-4.7-flash',
         enabled: 1,
         apiType: 'http',
+        createdAt: new Date(),
+        capacity: ['text'],
       },
       {
         id: uuidv4(),
@@ -62,6 +64,8 @@ export const bootstrapDBProviders = async () => {
         value: 'glm-4.5-Flash',
         enabled: 1,
         apiType: 'http',
+        createdAt: new Date(),
+        capacity: ['text'],
       },
       {
         id: uuidv4(),
@@ -70,6 +74,8 @@ export const bootstrapDBProviders = async () => {
         value: 'qwen-plus',
         enabled: 1,
         apiType: 'openAI',
+        createdAt: new Date(),
+        capacity: ['text'],
       },
       {
         id: uuidv4(),
@@ -78,6 +84,8 @@ export const bootstrapDBProviders = async () => {
         value: 'ep-20260517113543-5jvw8',
         enabled: 1,
         apiType: 'openAI',
+        createdAt: new Date(),
+        capacity: ['text'],
       },
       {
         id: uuidv4(),
@@ -86,6 +94,18 @@ export const bootstrapDBProviders = async () => {
         value: 'ERNIE-3.5-8K',
         enabled: 1,
         apiType: 'openAI',
+        createdAt: new Date(),
+        capacity: ['text'],
+      },
+      {
+        id: uuidv4(),
+        providerId: 'ali',
+        label: 'qwen3.5-plus',
+        value: 'qwen3.5-plus',
+        enabled: 1,
+        apiType: 'openAI',
+        createdAt: new Date(),
+        capacity: ['text', 'image'],
       },
     ])
   }
