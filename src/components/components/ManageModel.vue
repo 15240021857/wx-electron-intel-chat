@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, useTemplateRef } from 'vue'
+import { ref, onMounted, useTemplateRef, toRaw } from 'vue'
 import { Icon } from '@iconify/vue'
 import {
   AccordionContent,
@@ -18,6 +18,7 @@ import { ApiResult } from '../../types/global'
 import ModelDialog from './components/ModelDialog.vue'
 import { Model } from '@/types/db'
 import { useProviderStore } from '@/store/useProviderStore'
+import WxUploadAvatar from '@/components/wx-reka/WxUploadAvatar.vue'
 
 const { providers, getProviders, addProvider, updateProvider, deleteProvider, toggleProvider } = useProvider()
 const { models, getModels, deleteModel, bulkPutModel, toggleModel } = useModel()
@@ -34,9 +35,14 @@ const getModelsOfProvider = async () => {
   console.log('providers==', providers.value)
   console.log('models==', models.value)
   providerList.value = providers.value.map((item) => {
+    const curModelList = models.value
+      .filter((model) => model.providerId === item.id)
+      .map((model) => {
+        return toRaw(model)
+      })
     return {
       ...item,
-      modelList: models.value.filter((model) => model.providerId === item.id),
+      modelList: [...curModelList],
     }
   })
 }
@@ -92,7 +98,7 @@ const saveProvider = async () => {
       console.log('新增失败')
     }
   } else {
-    // 保存修改
+    // 保存修改activeId的厂商
     const curProvider = providerList.value.find((item) => item.id === activeId.value)
     if (curProvider) {
       const { createdAt, updatedAt, modelList, ...ProviderParam } = curProvider
@@ -105,7 +111,8 @@ const saveProvider = async () => {
       }
       //   修改其模型
       console.log('修改其模型', modelList)
-      const bulkPutRes = await bulkPutModel(modelList)
+      const modelListParams = modelList.map((item) => toRaw(item))
+      const bulkPutRes = await bulkPutModel(modelListParams)
       if (bulkPutRes.code === 200) {
         console.log('修改模型成功')
       } else {
@@ -125,6 +132,15 @@ const toggleProviderFun = async (providerId: string, enabled: 0 | 1) => {
     console.log('修改成功')
   } else {
     console.log('修改失败')
+  }
+}
+// 处理厂商icon
+const handleProviderIconChange = (url: string, provider: any) => {
+  const curIndex = providerList.value.findIndex((item) => item.id === provider.id)
+  console.log('handleProviderIconChange', url, provider)
+  providerList.value[curIndex] = {
+    ...provider,
+    providerIcon: url,
   }
 }
 // 打开删除弹窗
@@ -288,12 +304,22 @@ onMounted(() => {
                 </Label>
                 <input id="baseURL" v-model="item.baseURL" class="input-black-util" type="text" />
               </fieldset>
+              <!-- 头像上传 -->
               <fieldset class="flex flex-row items-center justify-between">
+                <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="providerIcon">
+                  图标上传
+                </Label>
+                <WxUploadAvatar
+                  :default-url="item?.providerIcon"
+                  @change="(url) => handleProviderIconChange(url, item)"
+                />
+              </fieldset>
+              <!-- <fieldset class="flex flex-row items-center justify-between">
                 <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="testConnect">
                   连接性测试
                 </Label>
                 <button id="testConnect" class="btn-blank-primary-small">测试</button>
-              </fieldset>
+              </fieldset> -->
               <!-- 厂商下的模型 -->
               <section v-if="!isAdding" class="flex flex-col gap-y-2">
                 <div class="flex flex-row items-center justify-between">

@@ -4,10 +4,10 @@ import WxSelect from '../wx-reka/WxSelect.vue'
 import { Option, Result } from '@/types/settings'
 import ManageModel from './ManageModel.vue'
 import { useProviderStore } from '@/store/useProviderStore'
+import { useSettingStore } from '@/store/useSettingStore'
 // import
 const providerStore = useProviderStore()
 // 默认模型
-const defaultModelId = ref('')
 const options = computed<Option[]>(() => {
   return providerStore.enabledProviderList.map((item) => {
     return {
@@ -22,11 +22,17 @@ const options = computed<Option[]>(() => {
     }
   })
 })
-
-const onDefaultModelChange = (res: Result) => {
-  console.log('defaultModelId==', defaultModelId.value)
+const settingStore = useSettingStore()
+const getGlobalSetting = async () => {
+  await settingStore.getGlobalSetting()
+}
+const onDefaultModelChange = async (res: Result) => {
+  console.log('settingStore.globalSetting.defaultModelId==', settingStore.globalSetting.defaultModelId)
   // 这里修改全局设置
   console.log('onDefaultModelChange', res)
+  await settingStore.updateSettingFun({
+    defaultModelId: settingStore.globalSetting.defaultModelId,
+  })
 }
 const getProviderListFun = async () => {
   await providerStore.getEnabledProviderList()
@@ -34,6 +40,7 @@ const getProviderListFun = async () => {
 }
 onMounted(() => {
   getProviderListFun()
+  getGlobalSetting()
 })
 </script>
 
@@ -44,7 +51,7 @@ onMounted(() => {
       <label class="text-md leading-none text-green12 block" for="defaultModel"> 默认模型 </label>
       <WxSelect
         id="defaultModel"
-        v-model="defaultModelId"
+        v-model="settingStore.globalSetting.defaultModelId"
         :options="options"
         placeholder="请选择默认模型"
         @on-change="onDefaultModelChange"

@@ -2,27 +2,39 @@ import { computed, ref } from 'vue'
 import { db } from '../indexdb'
 import type { Chat } from '@/types/db'
 import { v4 as uuid } from 'uuid'
-import chatIcon from '@/assets/images/logo-icon-white-bg.png'
+import chatIcon from '@/assets/images/tdesign--logo-android.png'
 import { ChatItem } from '@/types/chat'
-
+import { useProvider } from './useProvider'
+const { providers, getProviderById, getProviders } = useProvider()
 export const useChat = () => {
   const chats = ref<Chat[]>([])
 
   //   获取对话列表
   const getChats = async () => {
     const list = await db.chats.orderBy('createdAt').reverse().toArray()
-    chats.value = list
+    await getProviders()
+    chats.value = await Promise.all(
+      list.map(async (item) => {
+        const curProvider = providers.value.find((provider) => item.providerId === provider.id)
+        return {
+          ...item,
+          providerIcon: curProvider?.providerIcon || chatIcon,
+        } as Chat
+      })
+    )
     console.log('获取对话列表===：', list)
   }
   //   添加对话
   const addChat = async (chat: Omit<Chat, 'id' | 'createdAt' | 'updatedAt'>): Promise<Chat> => {
     try {
+      const curProvider = await getProviderById(chat.providerId)
+      console.log('获取厂商：===================', curProvider)
       console.log('添加对话：', chat)
       const curChat = {
         id: uuid(),
         ...chat,
         title: chat.title || '新对话',
-        providerIcon: chat.providerIcon || chatIcon,
+        providerIcon: curProvider?.providerIcon || chat.providerIcon || chatIcon,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -38,8 +50,12 @@ export const useChat = () => {
   //   修改对话
   const updateChat = async (chat: Partial<Chat> & { id: string }) => {
     try {
+      const curChat = await getChatById(chat.id)
+      const curProvider = await getProviderById(curChat?.providerId || '')
+      console.log('获取厂商：===================', curProvider)
       const newChatProps = {
         ...chat,
+        providerIcon: curProvider?.providerIcon || chat.providerIcon || chatIcon,
         updatedAt: new Date(),
       }
       const res = await db.chats.update(chat.id, newChatProps)

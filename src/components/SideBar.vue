@@ -14,11 +14,11 @@
           <div
             v-for="item in chatStore.chatList"
             :key="item.id"
-            class="w-full flex flex-row items-center gap-1 hover:bg-gray-200 cursor-pointer px-1 py-2 rounded-lg"
+            class="w-full flex flex-row items-center gap-2 hover:bg-gray-200 cursor-pointer px-1 py-2 rounded-lg"
             :class="{ 'bg-gray-200': item.id === chatStore.curChat?.id }"
             @click="changeChatFun(item)"
           >
-            <img :src="item.providerIcon" alt="" class="w-[30px] h-[30px] aspect-square" />
+            <img :src="item.providerIcon" alt="" class="w-[32px] h-[32px] aspect-square rounded-full" />
             <span :key="item.title" class="flex-1 font-medium truncate" :title="item.title">{{ item.title }}</span>
             <span class="text-sm text-gray-400">{{ item.createdAt?.toLocaleString()?.slice(5, 10) }}</span>
           </div>

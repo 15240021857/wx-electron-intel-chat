@@ -4,18 +4,24 @@
     :class="isFocus ? 'border-blue-500' : 'border-gray-300'"
   >
     <!-- 图片或视频预览列表 -->
-    <div class="flex flex-row items-center gap-1">
+    <div class="flex flex-row items-center gap-1 pb-[10px]">
       <template v-if="capacityParams && capacityParams.image_url?.length">
         <div
           v-for="item in capacityParams.image_url"
           :key="item"
-          class="w-[60px] h-[60px] bg-gray-200 rounded-[5px] relative"
+          class="group w-[60px] h-[60px] bg-gray-200 rounded-[5px] relative hover"
         >
           <img :src="item" class="w-full h-full object-cover rounded-[5px]" />
           <div
-            class="absolute top-[-10px] right-[-10px] w-[24px] h-[24px] bg-black-900 text-base flex items-center justify-center"
+            class="opacity-0 group-hover:opacity-100 absolute z-2 top-[-10px] right-[-10px] w-[16px] h-[16px] rounded-full bg-stone-700 text-base text-white flex items-center justify-center"
           >
-            <Icon icon="mdi:delete-outline" width="20" height="20" class="text-black cursor-pointer" />
+            <Icon
+              icon="ant-design:close-outlined"
+              width="12"
+              height="12"
+              class="text-white cursor-pointer"
+              @click="removeFileByUrl(item)"
+            />
           </div>
         </div>
       </template>
@@ -47,7 +53,38 @@
     <div class="w-full flex flex-row items-center justify-between gap-1">
       <!-- 上传图片按钮 -->
       <div class="">
-        <input id="file" ref="imgFile" type="file" multiple @change="onImgFileChange" />
+        <!-- <label for="uploadFile" class="cursor-pointer"> -->
+        <!-- <Icon icon="mdi:image-plus" width="24" height="24" /> -->
+        <input ref="imgFile" type="file" multiple hidden accept="image/*" @change="onImgFileChange" />
+        <input ref="docFile" type="file" multiple hidden :accept="DOC_ACCEPT" @change="onDocFileChange" />
+        <!-- </label> -->
+        <WxPopper v-model="filePopVisible" :close-btn="false">
+          <template #trigger>
+            <Icon
+              ref="popTriggerBtn"
+              class="cursor-pointer"
+              icon="ant-design:plus-outlined"
+              width="24"
+              height="24"
+              @click="filePopVisible = !filePopVisible"
+            />
+          </template>
+          <template #default>
+            <ul
+              ref="popRef"
+              class="[&>li]:flex [&>li]:flex-row [&>li]:items-center [&>li]:gap-x-1 [&>li]:cursor-pointer [&>li]:p-[2px_5px] [&>li]:rounded-sm [&>li]:hover:bg-stone-200"
+            >
+              <li @click="onFileClick('image')">
+                <Icon icon="ant-design:file-image-outlined" width="20" height="20"></Icon>
+                <span class="text-base">图片</span>
+              </li>
+              <!-- <li @click="onFileClick('doc')">
+                <Icon icon="ant-design:file-add-outlined" width="20" height="20"></Icon>
+                <span class="text-base">文件</span>
+              </li> -->
+            </ul>
+          </template>
+        </WxPopper>
       </div>
       <!-- 发送消息 -->
       <div class="self-end">
@@ -76,11 +113,13 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, toRaw, useTemplateRef } from 'vue'
+import { onMounted, onUnmounted, ref, toRaw, useTemplateRef } from 'vue'
 import { Icon } from '@iconify/vue'
 import { SendMsgParams } from '@/types/chat'
 import { CapacityParams } from '@/types/db'
 import { fileToBase64 } from '@/utils'
+import WxPopper from '@/components/wx-reka/WxPopper.vue'
+import { onClickOutside } from '@vueuse/core'
 
 defineProps<{
   outLoading: boolean // 流式输出中
@@ -111,8 +150,17 @@ const sendMsg = () => {
     image_url: toRaw(image_url),
     video_url: toRaw(video_url),
   })
+  resetMsgInput()
+}
+const resetMsgInput = () => {
   // 发送完，清空
   searchInput.value && (searchInput.value.value = '')
+  capacityParams.value = {
+    image_url: [],
+    video_url: [],
+  }
+  imgFile.value && (imgFile.value.value = '')
+  docFile.value && (docFile.value.value = '')
 }
 const onInputKeyDown = (e: KeyboardEvent) => {
   if (e.shiftKey && e.key === 'Enter') {
@@ -143,8 +191,19 @@ const stopCurMsg = () => {
 }
 
 const imgFile = ref<HTMLInputElement | null>(null)
+const docFile = ref<HTMLInputElement | null>(null)
+const filePopVisible = ref(false)
+type FileMode = 'image' | 'doc'
+const onFileClick = (mode: FileMode) => {
+  if (mode === 'image') {
+    imgFile.value?.click()
+  } else if (mode === 'doc') {
+    docFile.value?.click()
+  }
+}
 const onImgFileChange = async (e: Event) => {
   // console.log('imgFile.value', imgFile.value?.files)
+  filePopVisible.value = false
   const files = imgFile.value?.files
   let base64List: string[] = []
   if (files && files?.length > 0) {
@@ -158,6 +217,43 @@ const onImgFileChange = async (e: Event) => {
     capacityParams.value.image_url = base64List || []
   }
 }
+const DOC_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.xml,.log'
+
+const onDocFileChange = async (e: Event) => {
+  filePopVisible.value = false
+  console.log('onDocFileChange', docFile.value?.files)
+}
+// 删除某个图片或文件
+const removeFileByUrl = (imgUrl: string) => {
+  const { image_url } = capacityParams.value
+  capacityParams.value.image_url = image_url?.filter((item) => item !== imgUrl)
+}
+// 处理popper外点击
+const popRef = ref<HTMLElement | null>(null)
+const popTriggerBtn = useTemplateRef<InstanceType<typeof Icon>>('popTriggerBtn')
+onClickOutside(
+  popRef,
+  () => {
+    filePopVisible.value = false
+  },
+  { ignore: [popTriggerBtn] }
+)
+// const clickOutside = (event: MouseEvent) => {
+//   if (
+//     filePopVisible.value &&
+//     popRef.value &&
+//     !popRef.value.contains(event.target as Node) &&
+//     !popTriggerBtn.value?.$el.contains(event.target as Node)
+//   ) {
+//     filePopVisible.value = false
+//   }
+// }
+// onMounted(() => {
+//   window.addEventListener('click', clickOutside)
+// })
+// onUnmounted(() => {
+//   window.removeEventListener('click', clickOutside)
+// })
 </script>
 
 <style lang="scss" scoped></style>

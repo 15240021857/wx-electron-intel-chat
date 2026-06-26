@@ -293,6 +293,7 @@ const handleChatTitle = async (msg: string) => {
       id: chatStore.curChat?.id || '',
       title: msg,
     })
+    chatStore.refreshChatList()
     chatStore.curChat && (chatStore.curChat.title = msg)
   }
 }

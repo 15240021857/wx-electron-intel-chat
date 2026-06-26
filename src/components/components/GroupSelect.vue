@@ -1,70 +1,81 @@
 <template>
   <div class="w-full flex flex-row justify-center">
-    <select
+    <!-- <select
       class="w-[min(398px,80%)] border border-gray-300 rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       :value="chatStore.curChat?.modelId"
       @change="onchange"
     >
       <option value="" disabled selected>请选择智能体</option>
       <optgroup v-for="item in providerStore.enabledProviderList" :key="item.id" :label="item.label">
-        <option v-for="model in item.modelList" :key="model.value" :value="model.id" :label="model.label"></option>
+        <option v-for="model in item.modelList" :key="model.value" :value="model.id">
+          <div class="flex flex-row items-center w-[100px]">
+            <span>{{ model.label }}</span>
+
+            <Icon icon="radix-icons:mixer-horizontal" />
+          </div>
+        </option>
       </optgroup>
-    </select>
+    </select> -->
+
+    <WxSelect
+      id="defaultModel"
+      v-model="curModelId"
+      :options="options"
+      placeholder="请选择智能模型"
+      @on-change="onchange"
+    >
+      <template #appendIcon="{ row }">
+        <Icon
+          v-if="row?.capacity?.includes('image')"
+          icon="ant-design:file-image-outlined"
+          width="20"
+          height="20"
+        ></Icon>
+      </template>
+    </WxSelect>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useChatStore } from '@/store/useChatStore'
-import { ModelItem, ProviderItem, ProviderParam } from '@/types/chat'
-import { onMounted, ref } from 'vue'
-import { useProvider } from '@/db/hooks/useProvider'
-import { useModel } from '@/db/hooks/useModel'
+import { ModelItem, ProviderParam } from '@/types/chat'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useChat } from '@/db/hooks/useChat'
 import { useProviderStore } from '@/store/useProviderStore'
 import { Model } from '@/types/db'
+import { Icon } from '@iconify/vue'
+import WxSelect from '@/components/wx-reka/WxSelect.vue'
+import { Option } from '@/types/settings'
+import { useSettingStore } from '@/store/useSettingStore'
 const { updateChat } = useChat()
 
 const emits = defineEmits<{
   (e: 'onSelect', model: { selectedModel: ModelItem | null; selectedProvider: ProviderParam | null }): void
 }>()
-const providerList = ref<ProviderItem[]>([
-  // {
-  //   id: '1',
-  //   label: '智谱清言',
-  //   apiKey: '5e9ff230a8364875bbeaacb5685b110a.zyNRE10Cd1g83043',
-  //   baseURL: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
-  //   modelList: [
-  //     { id: '1', label: 'GLM-4.7', value: 'glm-4.7', apiType: 'http' },
-  //     { id: '2', label: 'GLM-5.0', value: 'glm-5', apiType: 'http' },
-  //   ],
-  // },
-  // {
-  //   id: '2',
-  //   label: '阿里通义千问',
-  //   apiKey: 'sk-fd132a6fda16432996eb9f1fd2e920af',
-  //   baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-  //   modelList: [{ id: '1', label: 'qwen-plus', value: 'qwen-plus', apiType: 'openAI' }]
-  // },
-  // {
-  //   id: '3',
-  //   label: '字节豆包',
-  //   apiKey: 'ark-345fb6b3-5208-4ecf-967d-4e067da74ce8-4a280',
-  //   baseURL: 'https://ark.cn-beijing.volces.com/api/v3',
-  //   modelList: [{ id: '1', label: 'doubao-seed-1-6-lite', value: 'ep-20260517113543-5jvw8', apiType: 'openAI' }]
-  // },
-  // {
-  //   id: '4',
-  //   label: '百度文心一言',
-  //   apiKey: '',
-  //   baseURL: '',
-  //   modelList: [{ id: '1', label: 'ERNIE-3.5-8K', value: 'ERNIE-3.5-8K', apiType: 'openAI' }]
-  // },
-])
+// defineSlots<{
+//   appendIcon: { row: { label: string; value: string; capacity?: string[] } }
+// }>()
 // 获取启用的供应商
 const providerStore = useProviderStore()
 const getProviderList = async () => {
-  providerStore.getEnabledProviderList()
+  await providerStore.getEnabledProviderList()
 }
+const curModelId = ref('')
+const options = computed<Option[]>(() => {
+  return providerStore.enabledProviderList.map((item) => {
+    return {
+      label: item.label,
+      value: item.id,
+      children: item.modelList.map((model) => {
+        return {
+          label: model.label,
+          value: model.id,
+          capacity: model.capacity,
+        }
+      }),
+    }
+  })
+})
 
 const chatStore = useChatStore()
 // 根据选中模型拿到当前模型和供应商
@@ -103,13 +114,19 @@ const setModelAndProviderByModel = (selectedModelId: string) => {
   })
 }
 // 拿到当前的模型名+请求方式
-const onchange = (e: any) => {
-  console.log('onchange==', e.target.value)
+const onchange = () => {
   // 在这里进行数据处理
-  setModelAndProviderByModel(e.target.value)
+  setModelAndProviderByModel(curModelId.value)
+}
+// 获取默认的模型id
+const settingStore = useSettingStore()
+const getDefaultModelId = async () => {
+  await settingStore.getGlobalSetting()
+  curModelId.value = settingStore.globalSetting?.defaultModelId || ''
 }
 onMounted(() => {
   getProviderList()
+  getDefaultModelId()
 })
 defineExpose({
   // 当切换历史chat时，根据chat的model来设置当前模型和供应商

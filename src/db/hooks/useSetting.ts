@@ -19,6 +19,10 @@ export const useSetting = () => {
     console.log('获取设置：', data)
     if (data) {
       globalSetting.value = data
+    } else {
+      // 没有就初始化添加默认
+      db.settings.add({ ...globalSetting.value })
+      await getSettings()
     }
   }
   //   添加设置
@@ -37,7 +41,7 @@ export const useSetting = () => {
   //   }
   // }
   //   修改设置
-  const updateSetting = async (setting: Partial<Setting> & { id: string }) => {
+  const updateSetting = async (setting: Partial<Setting>) => {
     try {
       console.log('修改设置：', setting)
       const res = await db.settings.update(SettingId, {

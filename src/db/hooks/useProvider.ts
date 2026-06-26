@@ -20,6 +20,11 @@ export const useProvider = () => {
     }
     providers.value = list
   }
+  const getProviderById = async (id: string) => {
+    const item = await db.providers.get(id)
+    console.log('获取厂商：', item)
+    return item
+  }
   //   添加厂商
   const addProvider = async (provider: Omit<Provider, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
@@ -101,6 +106,7 @@ export const useProvider = () => {
   return {
     providers,
     getProviders,
+    getProviderById,
     addProvider,
     updateProvider,
     deleteProvider,

@@ -109,8 +109,9 @@ onMounted(() => {
                 <SelectItemIndicator class="absolute left-0 w-[25px] inline-flex items-center justify-center">
                   <Icon icon="radix-icons:check" />
                 </SelectItemIndicator>
-                <SelectItemText>
+                <SelectItemText class="w-full flex flex-row justify-between items-center">
                   {{ option.label }}
+                  <slot name="appendIcon" :row="option"></slot>
                 </SelectItemText>
               </SelectItem>
             </SelectGroup>
@@ -120,10 +121,11 @@ onMounted(() => {
             class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-green9 data-[highlighted]:text-green1"
             :value="item.value"
           >
-            <SelectItemText>
+            <SelectItemText class="w-full flex flex-row justify-between items-center">
               {{ item.label }}
-            </SelectItemText></SelectItem
-          >
+              <slot name="appendIcon" :row="item"></slot>
+            </SelectItemText>
+          </SelectItem>
           <SelectSeparator class="h-[1px] bg-green6 m-[5px]" />
         </SelectViewport>
         <SelectScrollDownButton class="flex items-center justify-center h-[25px] bg-white text-violet11 cursor-default">

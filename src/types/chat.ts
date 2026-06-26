@@ -27,7 +27,7 @@ export type ProviderItem = Provider & {
   modelList: Model[]
 }
 // 供应商核心字段
-export type ProviderParam = Pick<ProviderItem, 'id' | 'apiKey' | 'baseURL'>
+export type ProviderParam = Pick<ProviderItem, 'id' | 'apiKey' | 'baseURL' | 'providerIcon'>
 // 发消息参数
 export interface SendMsgParams {
   msg: string

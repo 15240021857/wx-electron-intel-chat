@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 import { ChatItem, MsgItem } from '@/types/chat'
-import chatIcon from '@/assets/images/logo-icon-white-bg.png'
-import { fmtDate } from '@/utils'
 import { useMsgStore } from './useMsgStore'
 import { useChat } from '@/db/hooks/useChat'
 
@@ -34,6 +32,16 @@ export const useChatStore = defineStore('chatStore', {
         this.setChatList(chats.value)
         const curChat = chats.value[0]
         this.setcurChat(curChat)
+      }
+    },
+    async refreshChatList() {
+      await getChats()
+      this.setChatList(chats.value)
+      const curChatIndex = this.chatList.findIndex((item) => item.id === this.curChat?.id)
+      if (curChatIndex === -1) {
+        this.setcurChat(this.chatList[0])
+      } else {
+        this.setcurChat(this.chatList[curChatIndex])
       }
     },
     async createChat() {

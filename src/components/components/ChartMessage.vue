@@ -2,21 +2,34 @@
   <div ref="contentRef" class="w-full pr-50px h-full px-5 py-2" @scroll="onScroll">
     <div v-for="item in msgList" :key="item.id" class="">
       <!-- 用户消息 -->
-      <div v-if="item.role === 'user'" class="flex justify-end items-center mb-[16px] pl-[45px]">
-        <div class="bg-[#F0F0F0] rounded-[8px] p-[8px]" v-text="item.content"></div>
-        <Icon
-          icon="ant-design:user-outlined"
+      <div v-if="item.role === 'user'" class="flex justify-end items-start gap-x-2 mb-[16px] pl-[45px]">
+        <!-- 带图片消息 -->
+        <div class="flex flex-col justify-end items-end gap-y-[8px]">
+          <div v-if="item.image_url" class="flex flex-wrap gap-[8px]">
+            <img
+              v-for="(imgItem, index) in item.image_url"
+              :key="`img_${index}`"
+              class="w-[154px] h-[154px] rounded-[5px]"
+              :src="imgItem"
+              alt=""
+            />
+          </div>
+          <div class="bg-[#F0F0F0] rounded-[8px] p-[8px]" v-text="item.content"></div>
+        </div>
+        <!-- <Icon
+          icon="tdesign:giggle"
           class="bg-[#F0F0F0] rounded-full p-[8px] ml-[8px] text-sky-600"
-          width="36"
-          height="36"
-        />
+          width="40"
+          height="40"
+        /> -->
+        <img class="w-[36px] h-[36px] rounded-full" :src="UserIcon" alt="User" />
       </div>
       <!-- 助理消息 -->
       <div
         v-if="item.role === 'assistant'"
         class="w-full flex flex-row justify-start items-start mt-[16px] rounded-[8px] p-[8px]"
       >
-        <img class="w-[32px] h-[32px] rounded-full" src="@/assets/images/logo-icon-white-bg.png" alt="" />
+        <img class="w-[36px] h-[36px] rounded-full" :src="chatStore.curChat?.providerIcon" alt="" />
         <!-- <div v-show="!(item.reasoning_content || item.content)"> -->
         <!-- 请求加载中 -->
         <div v-show="requestLoading" class="h-[32px] flex items-center ml-[5px]">
@@ -55,6 +68,7 @@ import { marked } from 'marked'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
 import { MsgItem } from '@/types/chat'
+import UserIcon from '@/assets/cool.png'
 
 const props = withDefaults(
   defineProps<{
