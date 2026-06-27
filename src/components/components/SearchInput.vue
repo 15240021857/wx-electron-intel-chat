@@ -1,7 +1,7 @@
 <template>
   <div
     class="flex flex-col w-full h-[auto] m-auto border-[1px] border-solid rounded-xl px-[10px] py-[8px]"
-    :class="isFocus ? 'border-blue-500' : 'border-gray-300'"
+    :class="isFocus ? 'border-blue-500 dark:border-blue-300' : 'border-gray-300 dark:border-gray-500'"
   >
     <!-- 图片或视频预览列表 -->
     <div class="flex flex-row items-center gap-1 pb-[10px]">
@@ -37,7 +37,7 @@
       /> -->
       <textarea
         ref="searchInput"
-        class="outline-none w-full h-full resize-none overflow-hidden max-h-[120px]"
+        class="outline-none w-full h-full resize-none overflow-hidden max-h-[120px] dark:text-gray-100"
         type="text"
         name="keywords"
         rows="1"
@@ -62,7 +62,7 @@
           <template #trigger>
             <Icon
               ref="popTriggerBtn"
-              class="cursor-pointer"
+              class="cursor-pointer dark:text-gray-100"
               icon="ant-design:plus-outlined"
               width="24"
               height="24"

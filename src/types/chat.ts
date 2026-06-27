@@ -11,7 +11,10 @@ export interface ChatHttpParam {
 // 前台的消息
 export type MsgItem = Message
 // 会话列表项
-export type ChatItem = Chat
+export type ChatItem = Chat & {
+  providerIcon?: string
+  provider?: ProviderItem
+}
 
 export interface ModelItem {
   id: number | string

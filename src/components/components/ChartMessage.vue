@@ -5,16 +5,19 @@
       <div v-if="item.role === 'user'" class="flex justify-end items-start gap-x-2 mb-[16px] pl-[45px]">
         <!-- 带图片消息 -->
         <div class="flex flex-col justify-end items-end gap-y-[8px]">
-          <div v-if="item.image_url" class="flex flex-wrap gap-[8px]">
+          <div v-if="item.image_url" class="flex flex-wrap justify-end items-start gap-[8px]">
             <img
               v-for="(imgItem, index) in item.image_url"
               :key="`img_${index}`"
-              class="w-[154px] h-[154px] rounded-[5px]"
+              class="w-[145px] h-auto rounded-[5px] object-cover"
               :src="imgItem"
               alt=""
             />
           </div>
-          <div class="bg-[#F0F0F0] rounded-[8px] p-[8px]" v-text="item.content"></div>
+          <div
+            class="bg-[#F0F0F0] dark:bg-gray-600 rounded-[8px] p-[8px] text-gray-900 dark:text-white"
+            v-text="item.content"
+          ></div>
         </div>
         <!-- <Icon
           icon="tdesign:giggle"
@@ -55,7 +58,7 @@
             </div>
           </div>
           <!-- 助理回答主内容 -->
-          <div v-html="fmtContentFun(item.content)"></div>
+          <div class="text-gray-900 dark:text-white" v-html="fmtContentFun(item.content)"></div>
         </div>
       </div>
     </div>

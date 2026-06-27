@@ -5,7 +5,7 @@ export interface Chat {
   providerId: string
   modelId: string
   //   apiType: 'http' | 'openAI'
-  providerIcon?: string
+  // providerIcon?: string
   createdAt: Date
   updatedAt: Date
   pid?: string // 子对话，用于多模型比较
@@ -57,7 +57,7 @@ export interface Setting {
   defaultModelId: string
   defaultProviderId: string
   themeColor: string
-  themeMode: 'light' | 'dark' | 'auto'
+  themeMode: 'light' | 'dark' | 'system' | ''
   language: 'zh-CN' | 'en-US'
   updatedAt: Date
 }

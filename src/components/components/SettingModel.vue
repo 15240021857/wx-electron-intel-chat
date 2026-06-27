@@ -26,10 +26,8 @@ const settingStore = useSettingStore()
 const getGlobalSetting = async () => {
   await settingStore.getGlobalSetting()
 }
-const onDefaultModelChange = async (res: Result) => {
-  console.log('settingStore.globalSetting.defaultModelId==', settingStore.globalSetting.defaultModelId)
+const onDefaultModelChange = async () => {
   // 这里修改全局设置
-  console.log('onDefaultModelChange', res)
   await settingStore.updateSettingFun({
     defaultModelId: settingStore.globalSetting.defaultModelId,
   })

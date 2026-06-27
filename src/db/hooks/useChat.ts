@@ -27,14 +27,11 @@ export const useChat = () => {
   //   添加对话
   const addChat = async (chat: Omit<Chat, 'id' | 'createdAt' | 'updatedAt'>): Promise<Chat> => {
     try {
-      const curProvider = await getProviderById(chat.providerId)
-      console.log('获取厂商：===================', curProvider)
       console.log('添加对话：', chat)
       const curChat = {
         id: uuid(),
         ...chat,
         title: chat.title || '新对话',
-        providerIcon: curProvider?.providerIcon || chat.providerIcon || chatIcon,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
@@ -50,12 +47,8 @@ export const useChat = () => {
   //   修改对话
   const updateChat = async (chat: Partial<Chat> & { id: string }) => {
     try {
-      const curChat = await getChatById(chat.id)
-      const curProvider = await getProviderById(curChat?.providerId || '')
-      console.log('获取厂商：===================', curProvider)
       const newChatProps = {
         ...chat,
-        providerIcon: curProvider?.providerIcon || chat.providerIcon || chatIcon,
         updatedAt: new Date(),
       }
       const res = await db.chats.update(chat.id, newChatProps)

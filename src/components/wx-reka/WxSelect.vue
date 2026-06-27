@@ -52,10 +52,10 @@ const props = withDefaults(
   }
 )
 // 定义事件
-const emits = defineEmits<{ (e: 'onChange', value: Result): void }>()
+const emits = defineEmits<{ (e: 'onChange', { value, res }: { value: string; res?: Result }): void }>()
 watch(myValue, (newValue) => {
   const res = findOption(newValue || '')
-  emits('onChange', res)
+  emits('onChange', { value: newValue || '', res })
 })
 
 const findOption = (value: string): Result => {

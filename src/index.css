@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @config '../tailwind.config.js';
+/* 主题切换 */
+@custom-variant dark (&:where(.dark, .dark *));
 :root {
   --tw-primary: rgba(31, 127, 62, 1);
   --tw-primary-hover: oklch(44.8% 0.119 151.328);

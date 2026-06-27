@@ -1,9 +1,11 @@
 <template>
   <div class="w-full relative">
-    <h2 class="w-full bg-gray-100 h-[52px] flex items-center px-3 border-b border-b-gray-300">
-      <span class="font-semibold">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
-      <span class="mx-1">——</span>
-      <span class="font-semibold">{{ chatStore.curChat?.title.slice(0, 20) }}</span>
+    <h2
+      class="w-full bg-gray-100 dark:bg-gray-700 h-[52px] flex items-center px-3 border-b border-b-gray-300 dark:border-b-gray-500"
+    >
+      <span class="font-semibold dark:text-white">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
+      <span class="mx-1 dark:text-gray-200">——</span>
+      <span class="font-semibold dark:text-white">{{ chatStore.curChat?.title.slice(0, 20) }}</span>
     </h2>
     <div class="flex flex-col h-[calc(100%-52px)] py-[16px]">
       <!-- 聊天内容区 -->
