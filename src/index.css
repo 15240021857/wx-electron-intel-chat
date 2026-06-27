@@ -4,10 +4,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 :root {
   --tw-primary: rgba(31, 127, 62, 1);
-  --tw-primary-hover: oklch(44.8% 0.119 151.328);
-  --tw-primary-blank: rgba(234, 255, 242, 1);
-  --tw-primary-blank-hover: rgba(207, 243, 221, 0.6);
-  --tw-primary-blank-active: rgba(207, 243, 221, 0.9);
+  /* --tw-primary-hover: oklch(44.8% 0.119 151.328); */
+  /* --tw-primary-blank: rgba(234, 255, 242, 1); */
+  /* --tw-primary-blank-hover: rgba(207, 243, 221, 0.6);
+  --tw-primary-blank-active: rgba(207, 243, 221, 0.9); */
+  --tw-primary-hover: color-mix(in oklch, var(--tw-primary) 80%, white);
+  --tw-primary-blank: color-mix(in oklch, var(--tw-primary) 10%, white);
+  --tw-primary-blank-hover: color-mix(in oklch, var(--tw-primary) 30%, white);
+  --tw-primary-blank-active: color-mix(in oklch, var(--tw-primary) 50%, white);
 }
 @theme {
   --color-primary: var(--tw-primary);

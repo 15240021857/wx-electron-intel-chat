@@ -18,7 +18,7 @@ const bootstrapDB = async () => {
   }
 }
 const bootstrapSetting = async () => {
-  await settingStore.applyTheme()
+  await settingStore.applySettings()
   await settingStore.listenThemeChange()
 }
 onMounted(() => {

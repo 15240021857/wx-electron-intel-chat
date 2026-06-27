@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full flex flex-row justify-center">
+  <div class="w-full flex flex-col justify-center items-center">
     <!-- <select
       class="w-[min(398px,80%)] border border-gray-300 rounded-md py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       :value="chatStore.curChat?.modelId"
@@ -16,7 +16,7 @@
         </option>
       </optgroup>
     </select> -->
-
+    <p class="text-[24px] bold w-full text-center leading-[24px] mb-[20px]">{{ $t('hello') }}从这里开始对话吧</p>
     <WxSelect
       id="defaultModel"
       v-model="curModelId"
@@ -39,7 +39,7 @@
 <script lang="ts" setup>
 import { useChatStore } from '@/store/useChatStore'
 import { ModelItem, ProviderParam } from '@/types/chat'
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useChat } from '@/db/hooks/useChat'
 import { useProviderStore } from '@/store/useProviderStore'
 import { Model } from '@/types/db'

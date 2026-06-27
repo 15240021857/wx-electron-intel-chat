@@ -11,5 +11,5 @@
     }
   },
   "exclude": ["**/*.vue.bak"],
-  "include": ["vite.renderer.config.mts", "src/**/*"] // 只包含渲染进程代码
+  "include": ["vite.renderer.config.mts", "src/**/*", "src/**/*.ts"] // 只包含渲染进程代码
 }

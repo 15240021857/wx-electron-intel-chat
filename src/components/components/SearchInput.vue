@@ -1,7 +1,7 @@
 <template>
   <div
     class="flex flex-col w-full h-[auto] m-auto border-[1px] border-solid rounded-xl px-[10px] py-[8px]"
-    :class="isFocus ? 'border-blue-500 dark:border-blue-300' : 'border-gray-300 dark:border-gray-500'"
+    :class="isFocus ? 'border-primary dark:border-primary' : 'border-gray-300 dark:border-gray-500'"
   >
     <!-- 图片或视频预览列表 -->
     <div class="flex flex-row items-center gap-1 pb-[10px]">
@@ -90,7 +90,7 @@
       <div class="self-end">
         <button
           v-show="!outLoading"
-          class="bg-green-600 hover:bg-green-700 active:bg-green-800 px-[5px] py-[5px] rounded-full text-white cursor-pointer"
+          class="bg-primary hover:bg-primary active:bg-green-800 px-[5px] py-[5px] rounded-full text-white cursor-pointer"
           @click="sendMsg"
         >
           <span>
@@ -100,7 +100,7 @@
         <!-- 停止本次问答 -->
         <button
           v-show="outLoading"
-          class="flex bg-green-600 hover:bg-green-700 active:bg-green-800 rounded-full text-white cursor-pointer relative px-[5px] py-[5px]"
+          class="flex bg-primary hover:bg-primary active:bg-green-800 rounded-full text-white cursor-pointer relative px-[5px] py-[5px]"
           @click="stopCurMsg"
         >
           <!-- <Icon icon="svg-spinners:pulse-2" width="24" height="24" /> -->
@@ -113,7 +113,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, toRaw, useTemplateRef } from 'vue'
+import { ref, toRaw, useTemplateRef } from 'vue'
 import { Icon } from '@iconify/vue'
 import { SendMsgParams } from '@/types/chat'
 import { CapacityParams } from '@/types/db'
@@ -201,7 +201,7 @@ const onFileClick = (mode: FileMode) => {
     docFile.value?.click()
   }
 }
-const onImgFileChange = async (e: Event) => {
+const onImgFileChange = async () => {
   // console.log('imgFile.value', imgFile.value?.files)
   filePopVisible.value = false
   const files = imgFile.value?.files
@@ -219,7 +219,7 @@ const onImgFileChange = async (e: Event) => {
 }
 const DOC_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar,.7z,.json,.xml,.log'
 
-const onDocFileChange = async (e: Event) => {
+const onDocFileChange = async () => {
   filePopVisible.value = false
   console.log('onDocFileChange', docFile.value?.files)
 }

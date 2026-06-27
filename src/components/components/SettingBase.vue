@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useSettingStore } from '@/store/useSettingStore'
 import WxSelect from '@/components/wx-reka/WxSelect.vue'
 import { Setting } from '@/types/db'
+import { useI18n } from 'vue-i18n'
 const settingStore = useSettingStore()
+const { locale } = useI18n()
 // 获取全局设置
 const getGlobalSettingFun = async () => {
   await settingStore.getGlobalSetting()
@@ -14,12 +16,13 @@ const ThemeOptions = ref([
   { label: '深色', value: 'dark' },
   { label: '跟随系统', value: 'auto' },
 ])
-const onThemeChange = ({ value }: { value: Setting['themeMode'] }) => {
+const onThemeChange = ({ value }: { value: string }) => {
+  const curVal = (value ?? '') as Setting['themeMode']
   settingStore.updateSettingFun({
     ...settingStore.globalSetting,
-    themeMode: value ?? '',
+    themeMode: curVal,
   })
-  handleTheme(value)
+  handleTheme(curVal)
 }
 const handleTheme = (theme: Setting['themeMode']) => {
   const { globalSetting } = settingStore
@@ -31,29 +34,33 @@ const handleTheme = (theme: Setting['themeMode']) => {
 }
 // 语言
 const LangOptions = ref([
-  { label: '中文', value: 'zh-CN' },
-  { label: 'EN', value: 'en-US' },
-  { label: '跟随系统', value: 'auto' },
+  { label: '中文', value: 'cn' },
+  { label: 'EN', value: 'en' },
 ])
-const onLangChange = ({ value }) => {
-  // settingStore.updateSetting({
-  //   themeMode: val,
-  // })
+const onLangChange = ({ value }: { value: string }) => {
+  const curVal = (value ?? '') as Setting['language']
+  settingStore.updateSettingFun({
+    language: curVal,
+  })
+  locale.value = curVal
 }
 
 const ThemeColorOptions = ref([
   { label: 'green', value: 'rgba(31, 127, 62, 1)' },
-  { label: 'gray', value: '#78716B' },
-  { label: 'skyblue', value: '#1BBCFD' },
+  { label: 'skyblue', value: '#00A6F0' },
+  // { label: 'skyblue', value: '#0084CE' },
   { label: 'Orange', value: '#FF6800' },
   { label: 'pink', value: '#F964B4' },
   { label: 'purple', value: '#C27BFF' },
   { label: 'rose', value: '#FC1E57' },
+  { label: 'gray', value: '#78716B' },
 ])
 const onThemeColorChange = (val: string) => {
-  // settingStore.updateSetting({
-  //   themeMode: val,
-  // })
+  settingStore.updateSettingFun({
+    ...settingStore.globalSetting,
+    themeColor: val,
+  })
+  settingStore.applyThemeColor(val)
 }
 onMounted(() => {
   getGlobalSettingFun()
@@ -91,8 +98,11 @@ onMounted(() => {
         <li
           v-for="item in ThemeColorOptions"
           :key="item.label"
-          class="w-[30px] h-[30px] rounded-full border border-white cursor-pointer hover:border-green8"
-          :style="{ 'background-color': item.value }"
+          class="w-[30px] h-[30px] rounded-full border border-[3px] border-white cursor-pointer hover:border-green8"
+          :style="{
+            'background-color': item.value,
+            'border-color': item.value === settingStore.globalSetting.themeColor ? '#333' : 'white',
+          }"
           :title="item.label"
           @click="onThemeColorChange(item.value)"
         ></li>

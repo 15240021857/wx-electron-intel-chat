@@ -1,6 +1,7 @@
 import { useSetting } from '@/db/hooks/useSetting'
 import { Setting } from '@/types/db'
 import { defineStore } from 'pinia'
+import { useI18n } from 'vue-i18n'
 const { globalSetting, getSettings, updateSetting } = useSetting()
 
 interface SettingStore {
@@ -14,7 +15,7 @@ export const useSettingStore = defineStore('settingStore', {
       defaultProviderId: '',
       themeColor: '',
       themeMode: 'system',
-      language: 'zh-CN',
+      language: 'zh_CN',
       updatedAt: new Date(),
     },
   }),
@@ -30,6 +31,12 @@ export const useSettingStore = defineStore('settingStore', {
     // 更新设置
     async updateSettingFun(setting: Partial<Setting>) {
       await updateSetting(setting)
+      this.setGlobalSetting(setting)
+    },
+    // 应用设置
+    applySettings() {
+      this.applyTheme()
+      this.applyThemeColor()
     },
     async applyTheme(theme?: Setting['themeMode']) {
       // 先获取全局设置
@@ -52,6 +59,18 @@ export const useSettingStore = defineStore('settingStore', {
       window.matchMedia('(prefers-color-scheme:dark)').addEventListener('change', (e) => {
         this.applyTheme()
       })
+    },
+    async applyThemeColor(themeColor?: string) {
+      const root = document.documentElement
+      root.style.setProperty('--tw-primary', themeColor || this.globalSetting.themeColor)
+    },
+    async applyLanguage(language?: string) {
+      const { locale } = useI18n()
+      locale.value = language || this.globalSetting.language
+      // 无障碍/浏览器翻译规范
+      const root = document.documentElement
+      root.setAttribute('lang', language || this.globalSetting.language)
+      // root.setAttribute('dir', 'ltr')
     },
   },
 })

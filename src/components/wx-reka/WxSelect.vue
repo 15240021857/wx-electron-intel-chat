@@ -80,7 +80,7 @@ onMounted(() => {
 <template>
   <SelectRoot v-model="myValue">
     <SelectTrigger
-      class="inline-flex min-w-[160px] max-w-[300px] w-full items-center justify-between rounded-lg px-[15px] text-xs leading-none h-[35px] gap-[5px] bg-white text-grass11 hover:bg-stone-50 border shadow-sm focus:shadow-[0_0_0_2px] focus:shadow-black data-[placeholder]:text-green9 outline-none"
+      class="inline-flex min-w-[160px] max-w-[300px] w-full items-center justify-between rounded-lg px-[15px] text-xs leading-none h-[35px] gap-[5px] bg-white text-gray-700 hover:bg-stone-50 border shadow-sm focus:shadow-[0_0_0_2px] focus:shadow-black data-[placeholder]:text-green9 outline-none"
       aria-label="Customise options"
       v-bind="$attrs"
     >
@@ -103,7 +103,7 @@ onMounted(() => {
               <SelectItem
                 v-for="(option, index) in item?.children"
                 :key="index"
-                class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-green9 data-[highlighted]:text-green1"
+                class="text-xs leading-none text-gray-700 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-primary data-[highlighted]:text-white"
                 :value="option?.value"
               >
                 <SelectItemIndicator class="absolute left-0 w-[25px] inline-flex items-center justify-center">
@@ -118,7 +118,7 @@ onMounted(() => {
           </template>
           <SelectItem
             v-else
-            class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-green9 data-[highlighted]:text-green1"
+            class="text-xs leading-none text-gray-700 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-primary data-[highlighted]:text-white"
             :value="item.value"
           >
             <SelectItemText class="w-full flex flex-row justify-between items-center">

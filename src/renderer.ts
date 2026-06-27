@@ -31,8 +31,10 @@ import App from './app.vue'
 import './index.css'
 import { setupStore } from '@/store'
 import router from '@/router'
+import i18n from '@/i18n/index'
 const app = createApp(App)
 app.use(router)
+app.use(i18n)
 setupStore(app)
 app.mount('#app')
 console.log('👋 This message is being logged by "renderer.ts", included via Vite')

@@ -58,6 +58,6 @@ export interface Setting {
   defaultProviderId: string
   themeColor: string
   themeMode: 'light' | 'dark' | 'system' | ''
-  language: 'zh-CN' | 'en-US'
+  language: 'zh_CN' | 'en' | ''
   updatedAt: Date
 }
