@@ -1,11 +1,10 @@
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { db } from '../indexdb'
 import type { Chat } from '@/types/db'
 import { v4 as uuid } from 'uuid'
 import chatIcon from '@/assets/images/tdesign--logo-android.png'
-import { ChatItem } from '@/types/chat'
 import { useProvider } from './useProvider'
-const { providers, getProviderById, getProviders } = useProvider()
+const { providers, getProviders } = useProvider()
 export const useChat = () => {
   const chats = ref<Chat[]>([])
 

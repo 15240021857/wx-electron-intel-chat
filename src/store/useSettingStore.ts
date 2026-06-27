@@ -34,13 +34,14 @@ export const useSettingStore = defineStore('settingStore', {
       this.setGlobalSetting(setting)
     },
     // 应用设置
-    applySettings() {
-      this.applyTheme()
-      this.applyThemeColor()
-    },
-    async applyTheme(theme?: Setting['themeMode']) {
+    async applySettings() {
       // 先获取全局设置
       await this.getGlobalSetting()
+      this.applyTheme()
+      this.applyThemeColor()
+      this.applyLanguage()
+    },
+    async applyTheme(theme?: Setting['themeMode']) {
       const curTheme = theme || this.globalSetting.themeMode
       const root = document.documentElement
       const systemPrefenceDark = window.matchMedia('(prefers-color-scheme:dark)').matches

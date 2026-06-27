@@ -6,7 +6,7 @@
     <div class="w-full">
       <button class="btn-blank-primary" @click="createChatFun">
         <Icon icon="ant-design:aliwangwang-outlined" width="26" height="26" />
-        新建对话
+        {{ $t('addChat') }}
       </button>
     </div>
     <!-- 历史记录 -->
