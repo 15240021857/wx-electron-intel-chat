@@ -57,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport, ScrollAreaCorner } from 'reka-ui'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
@@ -73,7 +73,6 @@ const { chats, getChats } = useChat()
 const getHistoryList = async () => {
   // await chatStore.getChatList()
   await getChats()
-  console.log('获取对话列表1111111111111111111111', chats.value)
 }
 // 创建对话
 const createChatFun = async () => {
@@ -92,6 +91,7 @@ const changeChatFun = (item: ChatItem) => {
 const changePage = (path: string) => {
   router.push(path)
 }
+
 onMounted(() => {
   getHistoryList()
 })

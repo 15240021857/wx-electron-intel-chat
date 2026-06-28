@@ -5,6 +5,7 @@ import { useChat } from '@/db/hooks/useChat'
 
 interface ChatStore {
   curChat: ChatItem | null
+  curChatId: string
   chatList: ChatItem[]
 }
 
@@ -12,11 +13,15 @@ const { chats, addChat, getChats } = useChat()
 export const useChatStore = defineStore('chatStore', {
   state: (): ChatStore => ({
     curChat: null,
+    curChatId: '',
     chatList: [],
   }),
   actions: {
     setcurChat(chat: ChatItem) {
       this.curChat = chat
+    },
+    setcurChatId(chatId: string) {
+      this.curChatId = chatId
     },
     setChatList(list: ChatItem[]) {
       this.chatList = list
@@ -38,7 +43,7 @@ export const useChatStore = defineStore('chatStore', {
         providerId: '',
       }
       const curChat: ChatItem = await addChat(chatData)
-      this.setChatList([curChat, ...this.chatList])
+      // this.setChatList([curChat, ...this.chatList])
       this.setcurChat(curChat)
     },
     // 根据聊天id获取消息列表

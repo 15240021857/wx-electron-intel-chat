@@ -2,13 +2,14 @@ import { ref, watchEffect } from 'vue'
 import { db } from '../indexdb'
 import type { Chat, Provider } from '@/types/db'
 import { v4 as uuid } from 'uuid'
-import { liveQuery, Observable } from 'dexie'
-import { useLiveQuery } from './useLiveQuery'
+import { liveQuery } from 'dexie'
+import { useChatStore } from '@/store/useChatStore'
 export const useChat = () => {
   const chats = ref<Chat[]>([])
 
   //   获取对话列表
   const getChats = async () => {
+    const chatStore = useChatStore()
     let list: Chat[] = []
     watchEffect((onInvalidate) => {
       const subscription = liveQuery(async () => {
@@ -36,6 +37,7 @@ export const useChat = () => {
       }).subscribe((list) => {
         chats.value = list
         console.log('subscribe===：', list)
+        chatStore.setChatList(list)
       })
       onInvalidate(() => {
         subscription.unsubscribe()

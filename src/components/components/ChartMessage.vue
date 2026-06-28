@@ -39,7 +39,10 @@
         />
         <!-- <div v-show="!(item.reasoning_content || item.content)"> -->
         <!-- 请求加载中 -->
-        <div v-show="requestLoading" class="h-[32px] flex items-center ml-[5px] dark:text-white">
+        <div
+          v-show="requestLoading && item.id === lastAssistantId"
+          class="h-[32px] flex items-center ml-[5px] dark:text-white"
+        >
           <Icon icon="svg-spinners:3-dots-scale" width="24" height="24" />
         </div>
         <!-- 输出内容 -->
@@ -70,7 +73,7 @@
 </template>
 
 <script lang="ts" setup>
-import { nextTick, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { marked } from 'marked'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
@@ -128,6 +131,10 @@ watch(
     })
   }
 )
+const lastAssistantId = computed(() => {
+  const assistantMsg = props.msgList.filter((item) => item.role === 'assistant')
+  return assistantMsg[assistantMsg.length - 1]?.id || ''
+})
 
 defineExpose({
   scrollToBottom,

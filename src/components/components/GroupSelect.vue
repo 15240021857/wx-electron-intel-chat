@@ -65,7 +65,9 @@ const curModelId = ref('')
 watch(
   () => chatStore.curChat,
   () => {
+    console.log('chatStore.curChat!!!!!!!!!!!!!!!!!!!!!!!!!!!!', chatStore.curChat)
     curModelId.value = chatStore.curChat?.modelId || settingStore.globalSetting?.defaultModelId || ''
+    setModelAndProviderByModel(curModelId.value || '')
   }
 )
 const options = computed<Option[]>(() => {

@@ -6,7 +6,9 @@
       <template v-if="selectedModel?.label">
         <span class="font-semibold dark:text-white">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
         <span class="mx-1 dark:text-gray-200">——</span>
-        <span class="font-semibold dark:text-white">{{ chatStore.curChat?.title.slice(0, 20) }}</span>
+        <span class="font-semibold dark:text-white">{{
+          chatStore.curChat?.title ? chatStore.curChat?.title.slice(0, 20) : $t('newChat')
+        }}</span>
       </template>
       <div v-else class="dark:text-white text-base">{{ $t('newChat') }}</div>
     </h2>
@@ -77,8 +79,9 @@ const clearSelectedModel = () => {
 const GroupSelectRef = useTemplateRef('GroupSelectRef')
 watch(
   () => chatStore.curChat?.id,
-  async (newChatId) => {
-    console.log('切换聊天了', newChatId, chatStore.curChat)
+  async (newChatId, oldChatId) => {
+    console.log('切换聊天了newChatId==', newChatId, chatStore.curChat)
+    console.log('切换聊天了oldChatId==', oldChatId)
     if (newChatId) {
       // 拿到该chat的msgList
       const curChatMsgList = await getMessagesByChatId(newChatId)
@@ -90,14 +93,14 @@ watch(
         }
       })
       console.log(`%c ====${chatStore.curChat?.modelId}`, 'color: skyblue')
-      // 再拿到模型信息和供应商信息
-      if (chatStore.curChat?.modelId) {
-        const curModel = await getModelById(chatStore.curChat?.modelId as string)
-        // 直接调下拉组件的方法获取当前模型和厂商
-        GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '')
-      } else {
-        clearSelectedModel()
-      }
+      // // 再拿到模型信息和供应商信息
+      // if (chatStore.curChat?.modelId) {
+      //   const curModel = await getModelById(chatStore.curChat?.modelId as string)
+      //   // 直接调下拉组件的方法获取当前模型和厂商
+      //   GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '')
+      // } else {
+      //   clearSelectedModel()
+      // }
     } else {
       msgList.value = []
       clearSelectedModel()
@@ -107,6 +110,11 @@ watch(
     immediate: true,
   }
 )
+const handleCurModelAndProvider = async (modelId: string) => {
+  const curModel = await getModelById(modelId || (chatStore.curChat?.modelId as string))
+  // 直接调下拉组件的方法获取当前模型和厂商
+  GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '')
+}
 // 当前助理流式输出消息
 let curAssistantMsg: MsgItem | null = null
 // 流式输出完成后,更新数据到DB
@@ -139,7 +147,11 @@ const outLoading = ref(false)
 
 const onSendmsg = async (sendParam: SendMsgParams) => {
   const { msg, image_url, video_url } = sendParam
-  console.log('image_url==========', image_url)
+  console.log('chatStore.curChat==========', chatStore.curChat)
+
+  if (!chatStore.curChat?.id) {
+    await chatStore.createChat()
+  }
   if (!selectedModel.value?.value) {
     alert('请选择模型')
     return
@@ -298,7 +310,7 @@ const handleChatTitle = async (msg: string) => {
       id: chatStore.curChat?.id || '',
       title: msg,
     })
-    chatStore.refreshChatList()
+    // chatStore.refreshChatList()
     chatStore.curChat && (chatStore.curChat.title = msg)
   }
 }
