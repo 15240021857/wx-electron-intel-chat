@@ -25,9 +25,12 @@
               alt=""
               class="w-[32px] h-[32px] aspect-square rounded-full object-contain dark:bg-gray-200"
             />
-            <span :key="item.title" class="flex-1 font-medium truncate dark:text-white" :title="item.title">{{
-              item.title
-            }}</span>
+            <span
+              :key="item.title || $t('newwChat')"
+              class="flex-1 font-medium truncate dark:text-white"
+              :title="item.title"
+              >{{ item.title || $t('newwChat') }}</span
+            >
             <span class="text-sm text-gray-400">{{ item.createdAt?.toLocaleString()?.slice(5, 10) }}</span>
           </div>
         </div>

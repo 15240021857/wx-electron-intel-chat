@@ -290,7 +290,7 @@ const handleOpenAIStream = async (
 }
 // 添加对话标题
 const handleChatTitle = async (msg: string) => {
-  if (!chatStore?.curChat?.title || chatStore?.curChat?.title === '新对话') {
+  if (!chatStore?.curChat?.title || chatStore?.curChat?.title === '') {
     await updateChat({
       id: chatStore.curChat?.id || '',
       title: msg,

@@ -7,6 +7,7 @@ const checkValue = defineModel<(string | number)[]>()
 interface CheckListItem {
   label: string
   value: string | number
+  i18nKey?: string
 }
 withDefaults(
   defineProps<{
@@ -48,7 +49,9 @@ watch(
         </CheckboxIndicator>
       </CheckboxRoot>
 
-      <span class="select-none text-stone-700 text-sm dark:text-white">{{ item.label }}</span>
+      <span class="select-none text-stone-700 text-sm dark:text-white">{{
+        item.i18nKey ? $t(item.i18nKey) : item.label
+      }}</span>
     </label>
   </CheckboxGroupRoot>
 </template>

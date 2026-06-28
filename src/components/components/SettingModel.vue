@@ -44,14 +44,14 @@ onMounted(() => {
 
 <template>
   <div class="setting-container">
-    <p class="mb-5 !mt-0 text-mauve11 text-sm !leading-normal">您可以设置应用默认模型, 也可以管理您的厂商和模型.</p>
+    <p class="mb-5 !mt-0 text-mauve11 text-sm !leading-normal">{{ $t('modelTip') }}</p>
     <fieldset class="mb-[15px] w-full flex flex-row items-center justify-between">
-      <label class="text-md leading-none text-green12 block" for="defaultModel"> 默认模型 </label>
+      <label class="text-md leading-none text-green12 block" for="defaultModel"> {{ $t('modelDefault') }} </label>
       <WxSelect
         id="defaultModel"
         v-model="settingStore.globalSetting.defaultModelId"
         :options="options"
-        placeholder="请选择默认模型"
+        :placeholder="$t('modelDefaultPlaceholder')"
         @on-change="onDefaultModelChange"
       />
     </fieldset>

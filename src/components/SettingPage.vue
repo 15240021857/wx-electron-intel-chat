@@ -3,8 +3,8 @@ import { TabsContent, TabsIndicator, TabsList, TabsRoot, TabsTrigger } from 'rek
 import SettingModel from './components/SettingModel.vue'
 import SettingBase from './components/SettingBase.vue'
 const tabList = [
-  { label: '基础设置', value: 'base' },
-  { label: '模型设置', value: 'model' },
+  { label: '基础设置', value: 'base', i18nKey: 'baseSetting' },
+  { label: '模型设置', value: 'model', i18nKey: 'modelSetting' },
 ]
 </script>
 
@@ -26,7 +26,7 @@ const tabList = [
           class="bg-white cursor-pointer px-5 h-[45px] flex-1 flex items-center justify-center text-sm leading-none text-mauve11 select-none rounded-tl-md hover:text-primary data-[state=active]:text-primary outline-none cursor-default focus-visible:relative focus-visible:shadow-[0_0_0_2px] focus-visible:shadow-black"
           :value="tab.value"
         >
-          {{ tab.label }}
+          {{ $t(tab.i18nKey) || tab.label }}
         </TabsTrigger>
       </TabsList>
       <TabsContent

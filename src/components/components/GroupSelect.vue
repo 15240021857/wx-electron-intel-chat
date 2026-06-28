@@ -16,12 +16,12 @@
         </option>
       </optgroup>
     </select> -->
-    <p class="text-[24px] bold w-full text-center leading-[24px] mb-[20px]">{{ $t('hello') }}从这里开始对话吧</p>
+    <p class="text-[24px] dark:text-white bold w-full text-center leading-[24px] mb-[20px]">{{ $t('hello') }}</p>
     <WxSelect
       id="defaultModel"
       v-model="curModelId"
       :options="options"
-      placeholder="请选择智能模型"
+      :placeholder="$t('common.placeholderModel', { label: $t('smartModel') })"
       @on-change="onchange"
     >
       <template #appendIcon="{ row }">

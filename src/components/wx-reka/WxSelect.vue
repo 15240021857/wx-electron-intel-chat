@@ -110,7 +110,7 @@ onMounted(() => {
                   <Icon icon="radix-icons:check" />
                 </SelectItemIndicator>
                 <SelectItemText class="w-full flex flex-row justify-between items-center">
-                  {{ option.label }}
+                  {{ option.i18nKey ? $t(option.i18nKey) : option.label }}
                   <slot name="appendIcon" :row="option"></slot>
                 </SelectItemText>
               </SelectItem>
@@ -122,7 +122,7 @@ onMounted(() => {
             :value="item.value"
           >
             <SelectItemText class="w-full flex flex-row justify-between items-center">
-              {{ item.label }}
+              {{ item.i18nKey ? $t(item.i18nKey) : item.label }}
               <slot name="appendIcon" :row="item"></slot>
             </SelectItemText>
           </SelectItem>

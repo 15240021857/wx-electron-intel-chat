@@ -219,9 +219,9 @@ onMounted(() => {
 <template>
   <div class="manage-model">
     <div class="h-[30px] mb-2 flex flex-row justify-between items-center">
-      <span class="text-base/8">模型管理</span>
+      <span class="text-base/8">{{ $t('modelManage') }}</span>
       <div>
-        <button class="btn-primary" @click="openAddProvider">新增厂商</button>
+        <button class="btn-primary" @click="openAddProvider">{{ $t('providerAdd') }}</button>
       </div>
     </div>
     <AccordionRoot
@@ -307,7 +307,7 @@ onMounted(() => {
               <!-- 头像上传 -->
               <fieldset class="flex flex-row items-center justify-between">
                 <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="providerIcon">
-                  图标上传
+                  {{ $t('providerIcon') }}
                 </Label>
                 <WxUploadAvatar
                   :default-url="item?.providerIcon"
@@ -324,7 +324,7 @@ onMounted(() => {
               <section v-if="!isAdding" class="flex flex-col gap-y-2">
                 <div class="flex flex-row items-center justify-between">
                   <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="apiKey">
-                    模型列表
+                    {{ $t('modelList') }}
                   </Label>
                   <div>
                     <!-- 新增模型 -->
@@ -375,17 +375,17 @@ onMounted(() => {
                       </div>
                     </div>
                   </template>
-                  <span v-else class="flex flex-row items-center justify-center py-2">暂无模型</span>
+                  <span v-else class="flex flex-row items-center justify-center py-2">{{ $t('modelEmpty') }}</span>
                 </div>
               </section>
               <div class="flex flex-row justify-between items-center gap-x-2">
-                <button class="btn-blank-primary text-sm!" @click="saveProvider">保存设置</button>
+                <button class="btn-blank-primary text-sm!" @click="saveProvider">{{ $t('saveSetting') }}</button>
                 <button
                   v-if="isAdding"
                   class="btn-blank-primary text-sm! text-stone-500! border-stone-500!"
                   @click="cancelAdd"
                 >
-                  取消
+                  {{ $t('cancel') }}
                 </button>
               </div>
             </div>
@@ -396,7 +396,7 @@ onMounted(() => {
     <ModelDialog
       ref="modelDialogRef"
       :show-btn="false"
-      :dialog-title="modelDialogType === 'add' ? '新增模型' : '编辑模型'"
+      :dialog-title="modelDialogType === 'add' ? $t('modelAdd') : $t('modelEdit')"
       @success="onModelSuccess"
     ></ModelDialog>
   </div>

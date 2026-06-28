@@ -42,7 +42,7 @@
         name="keywords"
         rows="1"
         cols="20"
-        placeholder="发消息, 或按shift+enter换行"
+        :placeholder="$t('sendInputPlaceholder')"
         @keydown="onInputKeyDown"
         @input="ajustHeight"
         @focus="onInputFocus"
@@ -76,7 +76,7 @@
             >
               <li @click="onFileClick('image')">
                 <Icon icon="ant-design:file-image-outlined" width="20" height="20"></Icon>
-                <span class="text-base">图片</span>
+                <span class="text-base">{{ $t('capacityImage') }}</span>
               </li>
               <!-- <li @click="onFileClick('doc')">
                 <Icon icon="ant-design:file-add-outlined" width="20" height="20"></Icon>

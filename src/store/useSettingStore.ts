@@ -39,7 +39,6 @@ export const useSettingStore = defineStore('settingStore', {
       await this.getGlobalSetting()
       this.applyTheme()
       this.applyThemeColor()
-      this.applyLanguage()
     },
     async applyTheme(theme?: Setting['themeMode']) {
       const curTheme = theme || this.globalSetting.themeMode
@@ -65,9 +64,8 @@ export const useSettingStore = defineStore('settingStore', {
       const root = document.documentElement
       root.style.setProperty('--tw-primary', themeColor || this.globalSetting.themeColor)
     },
-    async applyLanguage(language?: string) {
-      const { locale } = useI18n()
-      locale.value = language || this.globalSetting.language
+    async applyLanguage(language?: string, i18nLocale?: any) {
+      i18nLocale.value = language || this.globalSetting.language
       // 无障碍/浏览器翻译规范
       const root = document.documentElement
       root.setAttribute('lang', language || this.globalSetting.language)

@@ -12,9 +12,9 @@ const getGlobalSettingFun = async () => {
 }
 // 主题设置 ====================
 const ThemeOptions = ref([
-  { label: '浅色', value: 'light' },
-  { label: '深色', value: 'dark' },
-  { label: '跟随系统', value: 'auto' },
+  { label: '浅色', value: 'light', i18nKey: 'light' },
+  { label: '深色', value: 'dark', i18nKey: 'dark' },
+  { label: '跟随系统', value: 'auto', i18nKey: 'system' },
 ])
 const onThemeChange = ({ value }: { value: string }) => {
   const curVal = (value ?? '') as Setting['themeMode']
@@ -34,7 +34,7 @@ const handleTheme = (theme: Setting['themeMode']) => {
 }
 // 语言
 const LangOptions = ref([
-  { label: '中文', value: 'cn' },
+  { label: '中文', value: 'zh-CN' },
   { label: 'EN', value: 'en' },
 ])
 const onLangChange = ({ value }: { value: string }) => {
@@ -42,14 +42,14 @@ const onLangChange = ({ value }: { value: string }) => {
   settingStore.updateSettingFun({
     language: curVal,
   })
-  locale.value = curVal
+  settingStore.applyLanguage(curVal, locale)
 }
 
 const ThemeColorOptions = ref([
   { label: 'green', value: 'rgba(31, 127, 62, 1)' },
   { label: 'skyblue', value: '#00A6F0' },
   // { label: 'skyblue', value: '#0084CE' },
-  { label: 'Orange', value: '#FF6800' },
+  { label: 'orange', value: '#FF6800' },
   { label: 'pink', value: '#F964B4' },
   { label: 'purple', value: '#C27BFF' },
   { label: 'rose', value: '#FC1E57' },
@@ -62,6 +62,11 @@ const onThemeColorChange = (val: string) => {
   })
   settingStore.applyThemeColor(val)
 }
+const saveSetting = async () => {
+  settingStore.updateSettingFun({
+    ...settingStore.globalSetting,
+  })
+}
 onMounted(() => {
   getGlobalSettingFun()
 })
@@ -73,27 +78,29 @@ onMounted(() => {
       Make changes to your account here. Click save when you're done.
     </p>
     <fieldset class="mb-[15px] w-full flex flex-row items-center justify-between">
-      <label class="text-md leading-none text-green12 block" for="defaultModel"> 主题 </label>
+      <label class="text-md leading-none text-green12 block" for="defaultModel"> {{ $t('theme') || '主题' }} </label>
       <WxSelect
         id="defaultModel"
         v-model="settingStore.globalSetting.themeMode"
         :options="ThemeOptions"
-        placeholder="请选择主题"
+        :placeholder="$t('placeholderTheme')"
         @on-change="onThemeChange"
       />
     </fieldset>
     <fieldset class="mb-[15px] w-full flex flex-row items-center justify-between">
-      <label class="text-md leading-none text-green12 block" for="defaultModel"> 语言 </label>
+      <label class="text-md leading-none text-green12 block" for="defaultModel"> {{ $t('language') || '语言' }} </label>
       <WxSelect
         id="defaultModel"
         v-model="settingStore.globalSetting.language"
         :options="LangOptions"
-        placeholder="请选择默认模型"
+        :placeholder="$t('placeholderLanguage')"
         @on-change="onLangChange"
       />
     </fieldset>
     <fieldset class="mb-[15px] w-full flex flex-row items-center justify-between">
-      <label class="text-md leading-none text-green12 block" for="defaultModel"> 主题色 </label>
+      <label class="text-md leading-none text-green12 block" for="defaultModel">
+        {{ $t('themeColor') || '主题色' }}
+      </label>
       <ul class="flex flex-row gap-[5px]">
         <li
           v-for="item in ThemeColorOptions"
@@ -109,7 +116,9 @@ onMounted(() => {
       </ul>
     </fieldset>
     <div class="flex justify-center mt-15">
-      <button class="btn-blank-primary max-w-[450px]">保存设置</button>
+      <button class="btn-blank-primary max-w-[450px]" @click="saveSetting">
+        {{ $t('saveSetting') || '保存设置' }}
+      </button>
     </div>
   </div>
 </template>

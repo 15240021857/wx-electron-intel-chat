@@ -30,7 +30,7 @@ export const useChat = () => {
       const curChat = {
         id: uuid(),
         ...chat,
-        title: chat.title || '新对话',
+        title: chat.title || '',
         createdAt: new Date(),
         updatedAt: new Date(),
       }

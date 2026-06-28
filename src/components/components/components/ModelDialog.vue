@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, reactive, useTemplateRef } from 'vue'
+import { ref, reactive, useTemplateRef } from 'vue'
 import {
   SwitchRoot,
   SwitchThumb,
@@ -17,7 +17,7 @@ import WxCheckBox from '@/components/wx-reka/WxCheckbox.vue'
 import { useModel } from '@/db/hooks/useModel'
 import { ApiResult } from '@/types/global'
 const { addModel, updateModel } = useModel()
-const props = defineProps<{
+defineProps<{
   provider?: ProviderItem
   model?: ModelItem
 }>()
@@ -109,9 +109,9 @@ const apiTypeOptions = [
 const myValue = ref('')
 // 能力分层
 const capacityOptions = [
-  { label: '文本生成', value: 'text' },
-  { label: '图片理解', value: 'image' },
-  { label: '视频理解', value: 'video' },
+  { label: '文本生成', value: 'text', i18nKey: 'capacityText' },
+  { label: '图片理解', value: 'image', i18nKey: 'capacityImage' },
+  { label: '视频理解', value: 'video', i18nKey: 'capacityVideo' },
 ]
 defineExpose({
   openDialog,
@@ -121,29 +121,29 @@ defineExpose({
 <template>
   <WxDialog ref="WxDialogRef" v-bind="$attrs" @confirm="submitModel" @open="openModelDialog" @close="onClose">
     <div class="flex flex-col gap-y-2">
-      <legend class="text-gray-400 size-base">当前供应商：{{ providerName || '' }}</legend>
+      <legend class="text-gray-400 size-base">{{ $t('curProvider') }}：{{ providerName || '' }}</legend>
       <fieldset>
         <div class="flex flex-col gap-2">
-          <label for="model-name">模型名称</label>
+          <label for="model-name">{{ $t('modelName') }}</label>
           <input
             id="model-name"
             v-model="modelForm.label"
             class="input-primary-util max-w-[100%]!"
             type="text"
-            placeholder="请输入模型名称"
+            :placeholder="$t('common.placeholder', { label: $t('modelName') })"
           />
         </div>
         <div class="flex flex-col gap-2"></div>
       </fieldset>
       <fieldset>
         <div class="flex flex-col gap-2">
-          <label for="model-value">模型值</label>
+          <label for="model-value">{{ $t('modelValue') }}</label>
           <input
             id="model-value"
             v-model="modelForm.value"
             class="input-primary-util max-w-[100%]!"
             type="text"
-            placeholder="请输入模型值"
+            :placeholder="$t('common.placeholder', { label: $t('modelValue') })"
           />
         </div>
         <div class="flex flex-col gap-2"></div>
@@ -151,14 +151,14 @@ defineExpose({
 
       <fieldset>
         <div class="flex flex-col gap-2">
-          <label for="model-apiType">请求方式</label>
+          <label for="model-apiType">{{ $t('requestMethod') }}</label>
           <WxSelect id="model-apiType" v-model="modelForm.apiType" class="max-w-[100%]!" :options="apiTypeOptions" />
         </div>
         <div class="flex flex-col gap-2"></div>
       </fieldset>
       <fieldset>
         <div class="flex flex-col gap-2">
-          <label for="model-maxTokens">最大Tokens</label>
+          <label for="model-maxTokens">{{ $t('modelMaxTokens') }}</label>
           <NumberFieldRoot id="model-maxTokens" v-model="modelForm.maxTokens" :min="0" :default-value="9999">
             <div
               class="w-38 mt-1 flex items-center border bg-white hover:bg-primary-50 rounded-lg shadow-sm h-9 focus-within:shadow-[0_0_0_2px] focus-within:shadow-stone-800"
@@ -178,7 +178,7 @@ defineExpose({
 
       <fieldset>
         <div class="flex flex-col gap-2">
-          <label for="model-enabled">是否启用</label>
+          <label for="model-enabled">{{ $t('modelEnabled') }}</label>
           <SwitchRoot v-model="modelForm.enabled" :true-value="1" :false-value="0" class="switch-primary">
             <SwitchThumb
               class="w-3.5 h-3.5 my-auto bg-white text-xs flex items-center justify-center shadow-xl rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-full"
@@ -189,7 +189,7 @@ defineExpose({
       </fieldset>
       <fieldset>
         <div class="flex flex-col gap-2">
-          <label for="model-enabled">能力边界</label>
+          <label for="model-enabled">{{ $t('modelCapacity') }}</label>
           <WxCheckBox v-model="modelForm.capacity" :check-list="capacityOptions"> </WxCheckBox>
         </div>
         <div class="flex flex-col gap-2"></div>
