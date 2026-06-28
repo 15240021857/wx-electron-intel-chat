@@ -6,6 +6,7 @@ export interface Chat {
   modelId: string
   //   apiType: 'http' | 'openAI'
   // providerIcon?: string
+  provider?: Provider
   createdAt: Date
   updatedAt: Date
   pid?: string // 子对话，用于多模型比较
@@ -36,6 +37,7 @@ export interface Provider {
   baseURL: string
   enabled: 0 | 1 // 0-禁用，1-启用
   providerIcon?: string
+  modelList?: Model[] // 模型
   createdAt: Date
   updatedAt: Date
 }

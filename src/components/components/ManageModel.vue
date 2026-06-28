@@ -118,7 +118,7 @@ const saveProvider = async () => {
       } else {
         console.log('修改模型失败')
       }
-      getProvidersFun()
+      // getProvidersFun()
     }
   }
 }

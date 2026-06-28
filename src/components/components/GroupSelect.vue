@@ -39,7 +39,7 @@
 <script lang="ts" setup>
 import { useChatStore } from '@/store/useChatStore'
 import { ModelItem, ProviderParam } from '@/types/chat'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useChat } from '@/db/hooks/useChat'
 import { useProviderStore } from '@/store/useProviderStore'
 import { Model } from '@/types/db'
@@ -49,6 +49,7 @@ import { Option } from '@/types/settings'
 import { useSettingStore } from '@/store/useSettingStore'
 const { updateChat } = useChat()
 
+const chatStore = useChatStore()
 const emits = defineEmits<{
   (e: 'onSelect', model: { selectedModel: ModelItem | null; selectedProvider: ProviderParam | null }): void
 }>()
@@ -61,6 +62,12 @@ const getProviderList = async () => {
   await providerStore.getEnabledProviderList()
 }
 const curModelId = ref('')
+watch(
+  () => chatStore.curChat,
+  () => {
+    curModelId.value = chatStore.curChat?.modelId || settingStore.globalSetting?.defaultModelId || ''
+  }
+)
 const options = computed<Option[]>(() => {
   return providerStore.enabledProviderList.map((item) => {
     return {
@@ -77,7 +84,6 @@ const options = computed<Option[]>(() => {
   })
 })
 
-const chatStore = useChatStore()
 // 根据选中模型拿到当前模型和供应商
 const setModelAndProviderByModel = (selectedModelId: string) => {
   // 通知父组件

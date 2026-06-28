@@ -12,24 +12,24 @@
     <!-- 历史记录 -->
     <ScrollAreaRoot class="flex-1 w-full h-[calc(100vh-100px)] relative">
       <ScrollAreaViewport class="w-full h-full rounded">
-        <div class="w-full flex flex-col">
+        <div class="w-[273px] flex flex-col">
           <div
-            v-for="item in chatStore.chatList"
+            v-for="item in chats"
             :key="item.id"
             class="w-full flex flex-row items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer px-1 py-2 rounded-lg"
             :class="{ 'bg-gray-200 dark:bg-gray-500': item.id === chatStore.curChat?.id }"
             @click="changeChatFun(item)"
           >
             <img
-              :src="item.providerIcon"
+              :src="item.provider?.providerIcon || chatDefaultIcon"
               alt=""
               class="w-[32px] h-[32px] aspect-square rounded-full object-contain dark:bg-gray-200"
             />
             <span
-              :key="item.title || $t('newwChat')"
+              :key="item.title || $t('newChat')"
               class="flex-1 font-medium truncate dark:text-white"
               :title="item.title"
-              >{{ item.title || $t('newwChat') }}</span
+              >{{ item.title || $t('newChat') }}</span
             >
             <span class="text-sm text-gray-400">{{ item.createdAt?.toLocaleString()?.slice(5, 10) }}</span>
           </div>
@@ -63,12 +63,17 @@ import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
 import { ChatItem } from '@/types/chat'
 import { useRouter, useRoute } from 'vue-router'
+import { useChat } from '@/db/hooks/useChat'
+import chatDefaultIcon from '@/assets/images/tdesign--logo-android.png'
 
 // 对话数据类型
 const chatStore = useChatStore()
+const { chats, getChats } = useChat()
 // 获取历史记录
 const getHistoryList = async () => {
-  await chatStore.getChatList()
+  // await chatStore.getChatList()
+  await getChats()
+  console.log('获取对话列表1111111111111111111111', chats.value)
 }
 // 创建对话
 const createChatFun = async () => {

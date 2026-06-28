@@ -1,27 +1,46 @@
-import { ref } from 'vue'
+import { ref, watchEffect } from 'vue'
 import { db } from '../indexdb'
-import type { Chat } from '@/types/db'
+import type { Chat, Provider } from '@/types/db'
 import { v4 as uuid } from 'uuid'
-import chatIcon from '@/assets/images/tdesign--logo-android.png'
-import { useProvider } from './useProvider'
-const { providers, getProviders } = useProvider()
+import { liveQuery, Observable } from 'dexie'
+import { useLiveQuery } from './useLiveQuery'
 export const useChat = () => {
   const chats = ref<Chat[]>([])
 
   //   获取对话列表
   const getChats = async () => {
-    const list = await db.chats.orderBy('createdAt').reverse().toArray()
-    await getProviders()
-    chats.value = await Promise.all(
-      list.map(async (item) => {
-        const curProvider = providers.value.find((provider) => item.providerId === provider.id)
-        return {
-          ...item,
-          providerIcon: curProvider?.providerIcon || chatIcon,
-        } as Chat
+    let list: Chat[] = []
+    watchEffect((onInvalidate) => {
+      const subscription = liveQuery(async () => {
+        list = await db.chats.orderBy('createdAt').reverse().toArray()
+        // 拿到providerId[]
+        const providerIds = list.map((item) => item.providerId)
+        const ids = [...new Set(providerIds)]
+        const providerList = await db.providers.where('id').anyOf(ids).toArray()
+        // const providerMap = new Map(providerList.map((item) => [item.id, item]))
+        const providerMap = providerList.reduce(
+          (acc, cur) => {
+            acc[cur.id] = cur
+            return acc
+          },
+          {} as Record<string, Provider>
+        )
+        list = list.map((item) => {
+          return {
+            ...item,
+            provider: providerMap[item.providerId],
+          } as Chat
+        })
+        console.log('获取对话列表===：', list)
+        return list
+      }).subscribe((list) => {
+        chats.value = list
+        console.log('subscribe===：', list)
       })
-    )
-    console.log('获取对话列表===：', list)
+      onInvalidate(() => {
+        subscription.unsubscribe()
+      })
+    })
   }
   //   添加对话
   const addChat = async (chat: Omit<Chat, 'id' | 'createdAt' | 'updatedAt'>): Promise<Chat> => {
@@ -36,7 +55,7 @@ export const useChat = () => {
       }
       const res = await db.chats.add(curChat)
       console.log('添加成功：', res)
-      getChats()
+      // getChats()
       return curChat
     } catch (error) {
       console.error('添加对话失败：', error)
@@ -52,7 +71,7 @@ export const useChat = () => {
       }
       const res = await db.chats.update(chat.id, newChatProps)
       console.log('修改成功：', res)
-      await getChats()
+      // await getChats()
     } catch (error) {
       console.error('修改对话失败：', error)
     }
@@ -64,7 +83,7 @@ export const useChat = () => {
       console.log('删除对话：', id)
       const res = await db.chats.delete(id)
       console.log('删除成功：', res)
-      getChats()
+      // getChats()
     } catch (error) {
       console.error('删除对话失败：', error)
     }

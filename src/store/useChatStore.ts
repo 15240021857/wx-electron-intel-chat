@@ -21,19 +21,6 @@ export const useChatStore = defineStore('chatStore', {
     setChatList(list: ChatItem[]) {
       this.chatList = list
     },
-    async getChatList() {
-      await getChats()
-      console.log('获取对话列表：', chats.value)
-
-      if (chats.value.length === 0) {
-        console.log('没有历史记录')
-        this.createChat()
-      } else {
-        this.setChatList(chats.value)
-        const curChat = chats.value[0]
-        this.setcurChat(curChat)
-      }
-    },
     async refreshChatList() {
       await getChats()
       this.setChatList(chats.value)

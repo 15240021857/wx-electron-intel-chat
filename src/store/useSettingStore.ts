@@ -1,7 +1,6 @@
 import { useSetting } from '@/db/hooks/useSetting'
 import { Setting } from '@/types/db'
 import { defineStore } from 'pinia'
-import { useI18n } from 'vue-i18n'
 const { globalSetting, getSettings, updateSetting } = useSetting()
 
 interface SettingStore {
