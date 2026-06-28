@@ -46,7 +46,7 @@ export const useChatStore = defineStore('chatStore', {
     },
     async createChat() {
       const chatData = {
-        title: '新对话',
+        title: '',
         modelId: '',
         providerId: '',
       }
