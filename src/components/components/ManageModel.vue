@@ -248,7 +248,7 @@ onMounted(() => {
                   v-model="item.label"
                   class="outline-none w-full h-full"
                   type="text"
-                  placeholder="请输入厂商名称"
+                  :placeholder="$t('common.placeholder', { label: $t('providerName') })"
                 />
               </div>
               <div class="flex flex-row items-center justify-end gap-x-2">
@@ -292,21 +292,21 @@ onMounted(() => {
           >
             <div class="px-5 py-4 flex flex-col gap-y-2">
               <fieldset class="flex flex-row items-center justify-between">
-                <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="apiKey">
+                <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-dark" for="apiKey">
                   apiKey
                 </Label>
                 <input id="apiKey" v-model="item.apiKey" class="input-black-util" type="text" />
               </fieldset>
 
               <fieldset class="flex flex-row items-center justify-between">
-                <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="baseURL">
+                <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-dark" for="baseURL">
                   baseURL
                 </Label>
                 <input id="baseURL" v-model="item.baseURL" class="input-black-util" type="text" />
               </fieldset>
               <!-- 头像上传 -->
               <fieldset class="flex flex-row items-center justify-between">
-                <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="providerIcon">
+                <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-dark" for="providerIcon">
                   {{ $t('providerIcon') }}
                 </Label>
                 <WxUploadAvatar
@@ -323,7 +323,7 @@ onMounted(() => {
               <!-- 厂商下的模型 -->
               <section v-if="!isAdding" class="flex flex-col gap-y-2">
                 <div class="flex flex-row items-center justify-between">
-                  <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-white" for="apiKey">
+                  <Label class="text-sm font-semibold leading-[35px] text-stone-700 dark:text-dark" for="apiKey">
                     {{ $t('modelList') }}
                   </Label>
                   <div>
