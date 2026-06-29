@@ -21,7 +21,7 @@
       id="defaultModel"
       v-model="curModelId"
       :options="options"
-      :placeholder="$t('common.placeholderModel', { label: $t('smartModel') })"
+      :placeholder="$t('common.placeholder', { label: $t('smartModel') })"
       @on-change="onchange"
     >
       <template #appendIcon="{ row }">
@@ -62,14 +62,6 @@ const getProviderList = async () => {
   await providerStore.getEnabledProviderList()
 }
 const curModelId = ref('')
-watch(
-  () => chatStore.curChat,
-  () => {
-    console.log('chatStore.curChat!!!!!!!!!!!!!!!!!!!!!!!!!!!!', chatStore.curChat)
-    curModelId.value = chatStore.curChat?.modelId || settingStore.globalSetting?.defaultModelId || ''
-    setModelAndProviderByModel(curModelId.value || '')
-  }
-)
 const options = computed<Option[]>(() => {
   return providerStore.enabledProviderList.map((item) => {
     return {
@@ -87,38 +79,25 @@ const options = computed<Option[]>(() => {
 })
 
 // 根据选中模型拿到当前模型和供应商
-const setModelAndProviderByModel = (selectedModelId: string) => {
+const setModelAndProviderByModel = async (selectedModelId: string, isUpdateChat = true) => {
   // 通知父组件
-  let curModel = null
-  let curProvider = null
-  for (let provider of providerStore.enabledProviderList) {
-    for (let model of provider.modelList) {
-      if (model.id === selectedModelId) {
-        curModel = model
-        curProvider = {
-          id: provider.id,
-          apiKey: provider.apiKey,
-          baseURL: provider.baseURL,
-        } as ProviderParam
-        // 直接跳出
-        break
-      }
-    }
-  }
+  const { provider, model } = await providerStore.getProviderAndModelByModelId(selectedModelId || curModelId.value, {
+    providerProps: ['id', 'apiKey', 'baseURL'],
+  })
 
   // 更新当前chat的model
-  if (chatStore.curChat) {
+  if (isUpdateChat && chatStore.curChat) {
     updateChat({
       id: chatStore.curChat.id,
-      modelId: curModel?.id || '',
-      providerId: curProvider?.id || '',
+      modelId: model?.id || '',
+      providerId: provider?.id || '',
     })
-    chatStore.curChat.modelId = curModel?.id || ''
-    chatStore.curChat.providerId = curProvider?.id || ''
+    chatStore.curChat.modelId = model?.id || ''
+    chatStore.curChat.providerId = provider?.id || ''
   }
   emits('onSelect', {
-    selectedModel: curModel || ({} as Model),
-    selectedProvider: curProvider || ({} as ProviderParam),
+    selectedModel: model || ({} as Model),
+    selectedProvider: provider || ({} as ProviderParam),
   })
 }
 // 拿到当前的模型名+请求方式
@@ -130,7 +109,8 @@ const onchange = () => {
 const settingStore = useSettingStore()
 const getDefaultModelId = async () => {
   await settingStore.getGlobalSetting()
-  curModelId.value = settingStore.globalSetting?.defaultModelId || ''
+  curModelId.value = chatStore.curChat?.modelId || settingStore.globalSetting?.defaultModelId || ''
+  setModelAndProviderByModel(curModelId.value)
 }
 onMounted(() => {
   getProviderList()

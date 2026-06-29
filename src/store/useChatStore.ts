@@ -36,11 +36,12 @@ export const useChatStore = defineStore('chatStore', {
         this.setcurChat(this.chatList[curChatIndex])
       }
     },
-    async createChat() {
+    async createChat(params?: Partial<Pick<ChatItem, 'title' | 'modelId' | 'providerId'>>) {
+      const { title, modelId, providerId } = params || {}
       const chatData = {
-        title: '',
-        modelId: '',
-        providerId: '',
+        title: title || '',
+        modelId: modelId || '',
+        providerId: providerId || '',
       }
       const curChat: ChatItem = await addChat(chatData)
       // this.setChatList([curChat, ...this.chatList])

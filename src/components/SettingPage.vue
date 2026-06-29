@@ -2,14 +2,27 @@
 import { TabsContent, TabsIndicator, TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import SettingModel from './components/SettingModel.vue'
 import SettingBase from './components/SettingBase.vue'
+import { Icon } from '@iconify/vue'
+import { useRouter } from 'vue-router'
 const tabList = [
   { label: '基础设置', value: 'base', i18nKey: 'baseSetting' },
   { label: '模型设置', value: 'model', i18nKey: 'modelSetting' },
 ]
+const router = useRouter()
+const goback = () => {
+  router.push('/')
+}
 </script>
 
 <template>
-  <div class="w-full py-10 h-full overflow-y-auto">
+  <div class="w-full pt-20 pb-10 h-full overflow-y-auto relative">
+    <div
+      class="h-[55px] flex flex-row items-center absolute left-0 top-0 text-gray-700 dark:text-white hover:text-gray-500 dark:hover:text-gray-200 cursor-pointer"
+      @click="goback"
+    >
+      <Icon icon="ant-design:left-outlined" class="w-5 h-5 ml-5" />
+      <span>返回</span>
+    </div>
     <TabsRoot
       class="flex flex-col md:w-[70%] sm:w-[300px] max-w-3xl mx-auto shadow-sm rounded-lg border"
       default-value="base"

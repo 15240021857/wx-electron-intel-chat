@@ -18,19 +18,11 @@ const ThemeOptions = ref([
 ])
 const onThemeChange = ({ value }: { value: string }) => {
   const curVal = (value ?? '') as Setting['themeMode']
-  settingStore.updateSettingFun({
+  settingStore.setGlobalSetting({
     ...settingStore.globalSetting,
     themeMode: curVal,
   })
-  handleTheme(curVal)
-}
-const handleTheme = (theme: Setting['themeMode']) => {
-  const { globalSetting } = settingStore
-  settingStore.setGlobalSetting({
-    ...globalSetting,
-    themeMode: theme,
-  })
-  settingStore.applyTheme(theme)
+  settingStore.applyTheme(curVal)
 }
 // 语言
 const LangOptions = ref([
@@ -39,7 +31,8 @@ const LangOptions = ref([
 ])
 const onLangChange = ({ value }: { value: string }) => {
   const curVal = (value ?? '') as Setting['language']
-  settingStore.updateSettingFun({
+  settingStore.setGlobalSetting({
+    ...settingStore.globalSetting,
     language: curVal,
   })
   settingStore.applyLanguage(curVal, locale)
@@ -56,7 +49,7 @@ const ThemeColorOptions = ref([
   { label: 'gray', value: '#78716B' },
 ])
 const onThemeColorChange = (val: string) => {
-  settingStore.updateSettingFun({
+  settingStore.setGlobalSetting({
     ...settingStore.globalSetting,
     themeColor: val,
   })

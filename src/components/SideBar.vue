@@ -12,27 +12,34 @@
     <!-- 历史记录 -->
     <ScrollAreaRoot class="flex-1 w-full h-[calc(100vh-100px)] relative">
       <ScrollAreaViewport class="w-full h-full rounded">
-        <div class="w-[273px] flex flex-col">
-          <div
-            v-for="item in chats"
-            :key="item.id"
-            class="w-full flex flex-row items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer px-1 py-2 rounded-lg"
-            :class="{ 'bg-gray-200 dark:bg-gray-500': item.id === chatStore.curChat?.id }"
-            @click="changeChatFun(item)"
-          >
-            <img
-              :src="item.provider?.providerIcon || chatDefaultIcon"
-              alt=""
-              class="w-[32px] h-[32px] aspect-square rounded-full object-contain dark:bg-gray-200"
-            />
-            <span
-              :key="item.title || $t('newChat')"
-              class="flex-1 font-medium truncate dark:text-white"
-              :title="item.title"
-              >{{ item.title || $t('newChat') }}</span
+        <div class="w-[273px] h-full flex flex-col">
+          <template v-if="chats?.length > 0">
+            <div
+              v-for="item in chats"
+              :key="item.id"
+              class="w-full flex flex-row items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer px-1 py-2 rounded-lg"
+              :class="{ 'bg-gray-200 dark:bg-gray-500': item.id === chatStore.curChat?.id }"
+              @click="changeChatFun(item)"
             >
-            <span class="text-sm text-gray-400">{{ item.createdAt?.toLocaleString()?.slice(5, 10) }}</span>
-          </div>
+              <img
+                :src="item.provider?.providerIcon || chatDefaultIcon"
+                alt=""
+                class="w-[32px] h-[32px] aspect-square rounded-full object-contain dark:bg-gray-200"
+              />
+              <span
+                :key="item.title || $t('newChat')"
+                class="flex-1 font-medium truncate dark:text-white"
+                :title="item.title"
+                >{{ item.title || $t('newChat') }}
+              </span>
+              <span class="text-sm text-gray-400">{{ item.createdAt?.toLocaleString()?.slice(5, 10) }}</span>
+            </div>
+          </template>
+          <template v-else>
+            <div class="w-full h-full flex flex-row items-center justify-center py-5">
+              <span class="text-sm text-gray-400">{{ $t('common.Empty', { label: $t('conversation') }) }}</span>
+            </div>
+          </template>
         </div>
       </ScrollAreaViewport>
       <ScrollAreaScrollbar orientation="horizontal">

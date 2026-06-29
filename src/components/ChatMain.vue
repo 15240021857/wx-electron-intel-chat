@@ -53,6 +53,7 @@ import { useMsgStore } from '@/store/useMsgStore'
 import { useMessage } from '@/db/hooks/useMessage'
 import { useChat } from '@/db/hooks/useChat'
 import { useModel } from '@/db/hooks/useModel'
+import { useProviderStore } from '@/store/useProviderStore.js'
 
 const { getMessagesByChatId, addUserMessage, addAssistantMessage, updateMessage } = useMessage()
 const { updateChat } = useChat()
@@ -61,6 +62,7 @@ const chatStore = useChatStore()
 const msgStore = useMsgStore()
 
 const { getModelById } = useModel()
+const providerStore = useProviderStore()
 
 const { electronIpcApi } = window
 
@@ -68,6 +70,7 @@ const msgList = ref<MsgItem[]>([])
 // 厂商模型选中
 const selectedModel = ref<Model>()
 const selectedProvider = ref<ProviderParam>()
+// 当模型选中和切换curChat时触发
 const onModelSelect = (model: { selectedModel: Model; selectedProvider: ProviderParam }) => {
   selectedModel.value = model?.selectedModel
   selectedProvider.value = model?.selectedProvider
@@ -79,9 +82,8 @@ const clearSelectedModel = () => {
 const GroupSelectRef = useTemplateRef('GroupSelectRef')
 watch(
   () => chatStore.curChat?.id,
-  async (newChatId, oldChatId) => {
+  async (newChatId) => {
     console.log('切换聊天了newChatId==', newChatId, chatStore.curChat)
-    console.log('切换聊天了oldChatId==', oldChatId)
     if (newChatId) {
       // 拿到该chat的msgList
       const curChatMsgList = await getMessagesByChatId(newChatId)
@@ -93,14 +95,8 @@ watch(
         }
       })
       console.log(`%c ====${chatStore.curChat?.modelId}`, 'color: skyblue')
-      // // 再拿到模型信息和供应商信息
-      // if (chatStore.curChat?.modelId) {
-      //   const curModel = await getModelById(chatStore.curChat?.modelId as string)
-      //   // 直接调下拉组件的方法获取当前模型和厂商
-      //   GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '')
-      // } else {
-      //   clearSelectedModel()
-      // }
+      // 获取当前对话的模型和厂商
+      handleCurModelAndProvider(chatStore.curChat?.modelId || '')
     } else {
       msgList.value = []
       clearSelectedModel()
@@ -113,7 +109,13 @@ watch(
 const handleCurModelAndProvider = async (modelId: string) => {
   const curModel = await getModelById(modelId || (chatStore.curChat?.modelId as string))
   // 直接调下拉组件的方法获取当前模型和厂商
-  GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '')
+  if (modelId) {
+    // 没有，即为首次
+    GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '', false)
+  } else {
+    // 有modelId，则是正常切换，或是新增对话
+    GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '', true)
+  }
 }
 // 当前助理流式输出消息
 let curAssistantMsg: MsgItem | null = null
@@ -148,9 +150,13 @@ const outLoading = ref(false)
 const onSendmsg = async (sendParam: SendMsgParams) => {
   const { msg, image_url, video_url } = sendParam
   console.log('chatStore.curChat==========', chatStore.curChat)
-
+  // 当首次没有curChat时,创建一个
   if (!chatStore.curChat?.id) {
-    await chatStore.createChat()
+    await chatStore.createChat({
+      title: msg,
+      modelId: selectedModel.value?.value,
+      providerId: selectedProvider.value?.id,
+    })
   }
   if (!selectedModel.value?.value) {
     alert('请选择模型')
@@ -167,6 +173,7 @@ const onSendmsg = async (sendParam: SendMsgParams) => {
   // 添加标题
   handleChatTitle(msg)
   outLoading.value = true
+  console.log('selectedModel.value==', selectedModel.value)
   const { value: modelVal, apiType } = selectedModel.value
   const { apiKey, baseURL } = selectedProvider.value as ProviderParam
   if (!selectedProvider.value) {

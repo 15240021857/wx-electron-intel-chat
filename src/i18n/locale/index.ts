@@ -1,8 +1,10 @@
 const zh_CN_LANG = {
   common: {
     placeholder: '请输入{label}',
+    Empty: '暂无{label}',
   },
   hello: '让我们从这里开始对话吧~',
+  conversation: '对话',
   selectModelTip: '你好~',
   smartModel: '智能模型',
   sendInputPlaceholder: '发消息, 或按shift+enter换行',
@@ -57,8 +59,10 @@ export const messages = {
   en: {
     common: {
       placeholder: 'Please input {label}',
+      Empty: 'No {label}',
     },
     hello: "Let's start here~",
+    conversation: 'Conversation',
     selectModelTip: 'Hello~',
     smartModel: 'Smart Model',
     sendInputPlaceholder: 'Send message, or press shift+enter to line break',
