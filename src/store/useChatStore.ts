@@ -36,16 +36,20 @@ export const useChatStore = defineStore('chatStore', {
         this.setcurChat(this.chatList[curChatIndex])
       }
     },
-    async createChat(params?: Partial<Pick<ChatItem, 'title' | 'modelId' | 'providerId'>>) {
-      const { title, modelId, providerId } = params || {}
+    async createChat(params?: Partial<Pick<ChatItem, 'title' | 'modelId' | 'providerId' | 'pid'>>) {
+      const { title, modelId, providerId, pid } = params || {}
       const chatData = {
         title: title || '',
         modelId: modelId || '',
         providerId: providerId || '',
+        pid: pid || '',
       }
       const curChat: ChatItem = await addChat(chatData)
       // this.setChatList([curChat, ...this.chatList])
-      this.setcurChat(curChat)
+      if (!pid) {
+        // 创建子对话时，不用切换当前对话
+        this.setcurChat(curChat)
+      }
     },
     // 根据聊天id获取消息列表
     getMsgListByChatId(chatId: string | number): MsgItem[] {

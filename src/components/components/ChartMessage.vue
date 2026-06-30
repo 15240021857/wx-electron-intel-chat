@@ -34,7 +34,7 @@
       >
         <img
           class="w-[36px] h-[36px] rounded-full"
-          :src="chatStore.curChat?.provider?.providerIcon || chatDefaultIcon || ''"
+          :src="curChatWindowChat?.provider?.providerIcon || chatDefaultIcon || ''"
           alt=""
         />
         <!-- <div v-show="!(item.reasoning_content || item.content)"> -->
@@ -47,7 +47,7 @@
         </div>
         <!-- 输出内容 -->
         <div
-          class="w-full break-words leading-relaxed rounded-[8px] px-[8px] [&_h1]:text-2xl [&_h1]:font-bold [&_p]:my-2 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-800 [&_pre]:text-white [&_pre]:p-4 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-blue-400 [&_blockquote]:bg-blue-50 [&_blockquote]:p-3 [&_ul]:pl-6 [&_ul]:my-3 [&_ul]:list-disc [&_ul_ul]:list-circle [&_li]:my-1.5 [&_li]:pl-1 [&_ol]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol_ol]:list-lower-alpha [&_table]:w-full [&_table]:border-collapse [&_table]:whitespace-normal [&_th,&_td]:border [&_th,&_td]:border-gray-300 [&_th,&_td]:px-3 [&_th,&_td]:py-2 [&_th]:bg-gray-100"
+          class="w-full break-words leading-relaxed rounded-[8px] px-[8px] [&_h1]:text-2xl [&_h1]:font-bold [&_p]:my-2 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-800 [&_pre]:text-white [&_pre]:p-4 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-blue-400 [&_blockquote]:bg-blue-50 dark:[&_blockquote]:bg-gray-700 [&_blockquote]:p-3 [&_ul]:pl-6 [&_ul]:my-3 [&_ul]:list-disc [&_ul_ul]:list-circle [&_li]:my-1.5 [&_li]:pl-1 [&_ol]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol_ol]:list-lower-alpha [&_table]:w-full [&_table]:border-collapse [&_table]:whitespace-normal [&_th,&_td]:border [&_th,&_td]:border-gray-300 [&_th,&_td]:px-3 [&_th,&_td]:py-2 [&_th]:bg-gray-100"
         >
           <div v-show="item.reasoning_content" class="w-full bg-[#f5f5f5] px-4 py-1">
             <!-- 思考过程 -->
@@ -78,12 +78,14 @@ import { marked } from 'marked'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
 import { MsgItem } from '@/types/chat'
+import { Chat } from '@/types/db'
 import UserIcon from '@/assets/cool.png'
 import chatDefaultIcon from '@/assets/images/tdesign--logo-android.png'
 
 const props = withDefaults(
   defineProps<{
     msgList: any[]
+    curChatWindowChat?: Chat | null
     requestLoading?: boolean // 请求加载中
     outLoading?: boolean // 流式输出中
   }>(),
@@ -91,6 +93,7 @@ const props = withDefaults(
     msgList: () => [],
     requestLoading: false,
     outLoading: false,
+    curChatWindowChat: null,
   }
 )
 const fmtContentFun = (content: string) => {

@@ -41,6 +41,8 @@ const bridgeApi: ElectronIpcApi = {
   //   }
   // },
   openDeleteConfrim: () => ipcRenderer.invoke('open-delete-confirm'),
+  // 消息弹窗
+  showMessage: (args: any) => ipcRenderer.invoke('show-message', args),
 }
 // 注册桥接api
 contextBridge.exposeInMainWorld('electronIpcApi', bridgeApi)

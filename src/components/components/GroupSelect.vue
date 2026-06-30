@@ -42,16 +42,29 @@ import { ModelItem, ProviderParam } from '@/types/chat'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useChat } from '@/db/hooks/useChat'
 import { useProviderStore } from '@/store/useProviderStore'
-import { Model } from '@/types/db'
+import { Model, Chat } from '@/types/db'
 import { Icon } from '@iconify/vue'
 import WxSelect from '@/components/wx-reka/WxSelect.vue'
 import { Option } from '@/types/settings'
 import { useSettingStore } from '@/store/useSettingStore'
 const { updateChat } = useChat()
 
+const props = withDefaults(
+  defineProps<{
+    // 当前对话窗口的chat：可能是主对话 或子对话
+    curChatWindowChat?: Chat | null
+  }>(),
+  {
+    curChatWindowChat: null,
+  }
+)
 const chatStore = useChatStore()
 const emits = defineEmits<{
-  (e: 'onSelect', model: { selectedModel: ModelItem | null; selectedProvider: ProviderParam | null }): void
+  (
+    e: 'onSelect',
+    model: { selectedModel: ModelItem | null; selectedProvider: ProviderParam | null },
+    isUpdateChat: boolean
+  ): void
 }>()
 // defineSlots<{
 //   appendIcon: { row: { label: string; value: string; capacity?: string[] } }
@@ -85,20 +98,14 @@ const setModelAndProviderByModel = async (selectedModelId: string, isUpdateChat 
     providerProps: ['id', 'apiKey', 'baseURL'],
   })
 
-  // 更新当前chat的model
-  if (isUpdateChat && chatStore.curChat) {
-    updateChat({
-      id: chatStore.curChat.id,
-      modelId: model?.id || '',
-      providerId: provider?.id || '',
-    })
-    chatStore.curChat.modelId = model?.id || ''
-    chatStore.curChat.providerId = provider?.id || ''
-  }
-  emits('onSelect', {
-    selectedModel: model || ({} as Model),
-    selectedProvider: provider || ({} as ProviderParam),
-  })
+  emits(
+    'onSelect',
+    {
+      selectedModel: model || ({} as Model),
+      selectedProvider: provider || ({} as ProviderParam),
+    },
+    isUpdateChat
+  )
 }
 // 拿到当前的模型名+请求方式
 const onchange = () => {
@@ -109,7 +116,7 @@ const onchange = () => {
 const settingStore = useSettingStore()
 const getDefaultModelId = async () => {
   await settingStore.getGlobalSetting()
-  curModelId.value = chatStore.curChat?.modelId || settingStore.globalSetting?.defaultModelId || ''
+  curModelId.value = props.curChatWindowChat?.modelId || settingStore.globalSetting?.defaultModelId || ''
   setModelAndProviderByModel(curModelId.value)
 }
 onMounted(() => {

@@ -13,9 +13,9 @@
     <ScrollAreaRoot class="flex-1 w-full h-[calc(100vh-100px)] relative">
       <ScrollAreaViewport class="w-full h-full rounded">
         <div class="w-[273px] h-full flex flex-col">
-          <template v-if="chats?.length > 0">
+          <template v-if="parentChats?.length > 0">
             <div
-              v-for="item in chats"
+              v-for="item in parentChats"
               :key="item.id"
               class="w-full flex flex-row items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer px-1 py-2 rounded-lg"
               :class="{ 'bg-gray-200 dark:bg-gray-500': item.id === chatStore.curChat?.id }"
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport, ScrollAreaCorner } from 'reka-ui'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
@@ -76,6 +76,12 @@ import chatDefaultIcon from '@/assets/images/tdesign--logo-android.png'
 // 对话数据类型
 const chatStore = useChatStore()
 const { chats, getChats } = useChat()
+// 拿到父对话列表
+const parentChats = computed(() => {
+  console.log('parentChats-chats.value===', chats.value)
+
+  return chats.value.filter((item) => !item.pid)
+})
 // 获取历史记录
 const getHistoryList = async () => {
   // await chatStore.getChatList()

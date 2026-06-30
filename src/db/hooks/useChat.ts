@@ -102,6 +102,17 @@ export const useChat = () => {
       throw error
     }
   }
+  // 获取子对话列表
+  const getChildChatById = async (id: string) => {
+    try {
+      const res = await db.chats.where('pid').equals(id).toArray()
+      console.log('获取子对话成功：', res)
+      return res
+    } catch (errow) {
+      console.error('获取子对话失败：', errow)
+      throw errow
+    }
+  }
 
   return {
     chats,
@@ -110,5 +121,6 @@ export const useChat = () => {
     updateChat,
     deleteChat,
     getChatById,
+    getChildChatById,
   }
 }

@@ -18,6 +18,7 @@ export interface ElectronIpcApi {
   onStreamError: (callback: (msg: string) => void) => void
   abortStream: () => void
   openDeleteConfrim: () => Promise<boolean>
+  showMessage: (args: any) => void
 }
 declare global {
   interface Window {
