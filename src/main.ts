@@ -107,3 +107,19 @@ ipcMain.handle('open-delete-confirm', async (event, arg) => {
   // response 是点击按钮的索引：0=取消，1=确认删除
   return res.response === 1
 })
+// 前端消息弹窗
+ipcMain.handle('show-message', (event, arg) => {
+  const win = BrowserWindow.fromWebContents(event.sender)
+  if (!win || win.isDestroyed()) {
+    return
+  }
+  const { type = 'info', message, title = '提示' } = arg
+  dialog.showMessageBox(win, {
+    type, // 图标：none/info/warning/error/question
+    title,
+    message,
+    buttons: ['确定'], // 按钮顺序
+    defaultId: 0, // 默认选中取消按钮
+    cancelId: 0,
+  })
+})
