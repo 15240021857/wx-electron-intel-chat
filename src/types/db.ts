@@ -7,6 +7,7 @@ export interface Chat {
   //   apiType: 'http' | 'openAI'
   // providerIcon?: string
   provider?: Provider
+  // children?: Array<Chat> // 子对话
   createdAt: Date
   updatedAt: Date
   pid?: string // 子对话，用于多模型比较

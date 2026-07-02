@@ -59,35 +59,46 @@ app.on('activate', () => {
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and import them here.
 
-// 创建大模型实例
-const bigModel = new BigModel()
 // 通信
+// 请求Id和取消map映射
+const requestIdMap = new Map<string, AbortController>()
 // 问大模型
-ipcMain.handle('ask-model', async (event, { messages, model, provider }) => {
+ipcMain.handle('ask-model', async (event, { requestId, messages, model, provider }) => {
   console.log('ipcMain: askModel==')
+  // 创建大模型实例
+  const bigModel = new BigModel()
+  const abortController = new AbortController()
+  requestIdMap.set(requestId, abortController)
   await bigModel.askModelStream({
+    requestId: requestId,
+    signal: abortController.signal,
     messages,
     model,
     provider,
-    onData(chunk) {
+    onData(requestId, chunk) {
       console.log('chunk===', chunk)
-
-      event.sender.send('stream-data', chunk)
+      event.sender.send('stream-data', { content: chunk, requestId })
     },
-    onEnd() {
-      event.sender.send('stream-end')
+    onEnd(requestId) {
+      event.sender.send('stream-end', { requestId })
+      requestIdMap.delete(requestId)
     },
-    onAbort() {
-      event.sender.send('stream-abort')
+    onAbort(requestId) {
+      event.sender.send('stream-abort', { requestId })
+      requestIdMap.delete(requestId)
     },
-    onError(message) {
-      event.sender.send('stream-error', message)
+    onError(requestId, errorMsg) {
+      event.sender.send('stream-error', { msg: errorMsg, requestId })
+      requestIdMap.delete(requestId)
     },
   })
 })
 // 停止流式输出，节省tokens
 ipcMain.on('stop-stream', (event, arg) => {
-  bigModel.stopStream()
+  const { requestId } = arg
+  const curAbortController = requestIdMap.get(requestId)
+  curAbortController?.abort()
+  requestIdMap.delete(requestId)
 })
 // 打开删除确认框
 ipcMain.handle('open-delete-confirm', async (event, arg) => {

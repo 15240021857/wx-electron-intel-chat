@@ -29,25 +29,30 @@ export default class BigModel {
       this.getOpenAiInstance(provider?.apiKey, provider?.baseURL)
     } else {
       // 没传就用默认的厂商
-      this.getOpenAiInstance(Config.Model.qwen.apiKey, Config.Model.qwen.baseURL)
+      // this.getOpenAiInstance(Config.Model.qwen.apiKey, Config.Model.qwen.baseURL)
     }
     if (!this.client) {
       console.warn('未初始化模型')
       return
     }
-    const completion = await this.client.chat.completions.create({
-      model: model || this.defaultModel, //此处以qwen-plus为例，可按需更换模型名称。模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
-      messages: messages || [
-        { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: '你是谁？' },
-      ],
-    })
+    const completion = await this.client.chat.completions.create(
+      {
+        model: model || this.defaultModel, //此处以qwen-plus为例，可按需更换模型名称。模型列表：https://help.aliyun.com/zh/model-studio/getting-started/models
+        messages: messages || [
+          { role: 'system', content: 'You are a helpful assistant.' },
+          { role: 'user', content: '你是谁？' },
+        ],
+      },
+      { signal: this.abortController.signal }
+    )
     const res = JSON.parse(JSON.stringify(completion))
     console.log(res)
     return res
   }
   // 流式接口请求
   async askModelStream({
+    requestId,
+    signal,
     provider,
     model,
     messages,
@@ -66,18 +71,20 @@ export default class BigModel {
       console.log('Config.Model.qwen==', Config.Model.qwen)
 
       // this.getOpenAiInstance(Config.Model.qwen.apiKey, Config.Model.qwen.baseURL)
-      this.getOpenAiInstance(Config.Model.ARK.apiKey, Config.Model.ARK.baseURL)
+      // this.getOpenAiInstance(Config.Model.ARK.apiKey, Config.Model.ARK.baseURL)
     }
     if (!this.client) {
       console.warn('未初始化模型')
       return null
     }
     console.log('this.client==', this.client)
-
-    // 每次重置停止标识
-    this.stopStream()
+    // 内部abortController
     this.abortController = new AbortController()
-    const signal = this.abortController.signal
+    // 监听外部signal
+    signal?.addEventListener('abort', () => {
+      this.abortController.abort()
+    })
+
     try {
       console.log('model==', model)
       console.log('messages==', messages)
@@ -93,34 +100,32 @@ export default class BigModel {
           stream_options: { include_usage: true },
         },
         {
-          signal,
+          signal: this.abortController.signal,
         }
       )
       for await (const chunk of completion) {
         console.log(JSON.stringify(chunk))
         const content = chunk.choices[0]?.delta?.content
         if (content && onData) {
-          onData(content)
+          onData(requestId, content)
         }
       }
-      onEnd && onEnd()
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        onAbort && onAbort()
+        onAbort && onAbort(requestId)
         return null
       }
-      onError && onError(error.message)
+      onError && onError(requestId, error.message)
     } finally {
+      onEnd && onEnd(requestId)
       this.abortController = null
     }
-
-    return this.abortController
   }
   // 主动停止流式
-  stopStream() {
-    if (this.abortController) {
-      this.abortController.abort()
-      this.abortController = null
-    }
-  }
+  // stopStream() {
+  //   if (this.abortController) {
+  //     this.abortController.abort()
+  //     this.abortController = null
+  //   }
+  // }
 }

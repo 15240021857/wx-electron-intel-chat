@@ -65,6 +65,10 @@ import { useModel } from '@/db/hooks/useModel'
 //   }
 // )
 const childChat = defineModel<Chat | null>()
+
+const emits = defineEmits<{
+  (e: 'on-outloading-change', outLoading: boolean): void
+}>()
 const { getMessagesByChatId, addUserMessage, addAssistantMessage, updateMessage } = useMessage()
 const { updateChat } = useChat()
 
@@ -175,9 +179,10 @@ const stopCurMsg = () => {
   try {
     abortController?.abort()
     abortController = null
-    electronIpcApi.abortStream()
+    electronIpcApi.abortStream(curChatWindowChat.value?.id || '')
     sendLoading.value = false
     outLoading.value = false
+    emits('on-outloading-change', outLoading.value)
   } catch (error) {
     console.log('✔ 主动取消请求成功')
   }
@@ -328,7 +333,7 @@ const handleOpenAIStream = async (
   //   }
   // })
   const sendJson = handleMessagesParams(messages)
-  console.log('sendJson=======================', sendJson)
+  // console.log('sendJson=======================', sendJson)
   try {
     // 添加监听
     curAssistantMsg = await addAssistantMsgItem()
@@ -337,10 +342,14 @@ const handleOpenAIStream = async (
       cleanIpcListener()
     }
     sendLoading.value = true
-    console.log('==', { messages: sendJson, model, provider })
-
+    // console.log('==', { messages: sendJson, model, provider })
+    console.log(
+      'curChatWindowChat.value?.id========================================',
+      curChatWindowChat.value,
+      curChatWindowChat.value?.id
+    )
     // 发送请求
-    await electronIpcApi.askModel({ messages: sendJson, model, provider })
+    await electronIpcApi.askModel({ requestId: curChatWindowChat.value?.id || '', messages: sendJson, model, provider })
   } catch (error) {
     console.error(error)
   } finally {
@@ -362,6 +371,7 @@ const handleChatTitle = async (msg: string) => {
       // 是子就更新子
       childChat.value.title = msg
     } else {
+      // 是主就更新主对话
       chatStore.curChat && (chatStore.curChat.title = msg)
     }
   }
@@ -413,48 +423,70 @@ const removeAllStreamListener = () => {
 // 监听openAI方式的流式输出
 const onStreamDataLisitener = () => {
   removeAllStreamListener()
-  removeStreamDataListener = electronIpcApi.onStreamData((e: any, data: any) => {
-    if (!curAssistantMsg) {
+  removeStreamDataListener = electronIpcApi.onStreamData((e: Event, data: { content: string; requestId: string }) => {
+    const { content, requestId } = data
+    if (requestId !== curChatWindowChat.value?.id) {
+      // 非当前对话消息
       return
     }
+    console.log('on-data=========================', content, requestId)
     const curMsg = msgList.value.find((item) => item?.id === curAssistantMsg?.id)
     sendLoading.value = false
-    console.log('data=', data)
 
-    const curContent = data
-    curMsg && (curMsg.content += curContent)
+    curMsg && (curMsg.content += content)
     ChartMessageRef.value?.scrollToBottom()
     // console.log('curAssistantMsg==', curMsg);
   })
-  removeStreamAbortListener = electronIpcApi.onStreamAbort(() => {
-    if (!curAssistantMsg) {
+  removeStreamAbortListener = electronIpcApi.onStreamAbort((e: Event, data: { requestId: string }) => {
+    // if (!curAssistantMsg) {
+    //   return
+    // }
+    const { requestId } = data
+    if (requestId !== curChatWindowChat.value?.id) {
+      // 非当前对话消息
       return
     }
+    console.log('on-abort=========================', requestId)
     sendLoading.value = false
     outLoading.value = false
+    emits('on-outloading-change', outLoading.value)
     updateDBSteamMsg()
   })
-  removeStreamEndListener = electronIpcApi.onStreamEnd(async () => {
-    if (!curAssistantMsg) {
+  removeStreamEndListener = electronIpcApi.onStreamEnd(async (e: Event, data: { requestId: string }) => {
+    // if (!curAssistantMsg) {
+    //   return
+    // }
+    const { requestId } = data
+    console.log('on-end=========================', requestId.length, curChatWindowChat.value?.id?.length)
+    if (requestId !== curChatWindowChat.value?.id) {
+      // 非当前对话消息
       return
     }
     outLoading.value = false
+    emits('on-outloading-change', outLoading.value)
     await updateDBSteamMsg()
     // 对话结束，清空当前助理消息，防止子对话之间交叉影响
     curAssistantMsg = null
   })
-  removeStreamErrorListener = electronIpcApi.onStreamError((msg) => {
-    if (!curAssistantMsg) {
+  removeStreamErrorListener = electronIpcApi.onStreamError((e: Event, error: { msg: string; requestId: string }) => {
+    // if (!curAssistantMsg) {
+    //   return
+    // }
+    const { msg, requestId } = error
+    if (requestId !== curChatWindowChat.value?.id) {
+      // 非当前对话消息
       return
     }
-    console.error('流式输出出错了：', msg)
+    console.error('流式输出出错了：', msg, requestId)
     sendLoading.value = false
     outLoading.value = false
+    emits('on-outloading-change', outLoading.value)
     updateDBSteamMsg()
   })
 }
 const updateDBSteamMsg = async () => {
   const curMsg = msgList.value.find((item) => item?.id === curAssistantMsg?.id)
+  console.log('curAssistantMsg==', curAssistantMsg)
   await updateAssistantMsgItemWhenDone({
     id: curMsg?.id || '',
     content: curMsg?.content || '',
@@ -492,6 +524,7 @@ const readHttpStream = async (res: any) => {
       if (item.startsWith('data: [DONE]')) {
         console.log('输出结束了')
         outLoading.value = false
+        emits('on-outloading-change', outLoading.value)
         updateDBSteamMsg()
         return
       }
@@ -546,6 +579,9 @@ onUnmounted(() => {
 })
 defineExpose({
   createNewSession,
+  onSendmsg,
+  stopCurMsg,
+  outLoading,
 })
 </script>
 

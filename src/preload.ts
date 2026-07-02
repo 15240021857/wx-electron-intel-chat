@@ -16,12 +16,12 @@ const createIpcListener = (channel: string) => {
 const bridgeApi: ElectronIpcApi = {
   // addCount: (count:number) => ipcRenderer.send('add-count', count)
   // 发起大模型请求：openAI方式
-  askModel: async ({ messages, model, provider }: AskModelParam) => {
-    console.log('preload.ts: askModel=============', messages, model, provider)
-    const res = await ipcRenderer.invoke('ask-model', { messages, model, provider })
+  askModel: async ({ requestId, messages, model, provider }: AskModelParam) => {
+    console.log('preload.ts: askModel=============', requestId, messages, model, provider)
+    const res = await ipcRenderer.invoke('ask-model', { requestId, messages, model, provider })
     return res
   },
-  abortStream: () => ipcRenderer.send('stop-stream'),
+  abortStream: (requestId: string) => ipcRenderer.send('stop-stream', { requestId }),
   // 流式输出data
   onStreamData: createIpcListener('stream-data'),
   // 流式输出主动停止

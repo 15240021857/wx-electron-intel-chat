@@ -13,6 +13,7 @@ export type MsgItem = Message
 // 会话列表项
 export type ChatItem = Chat & {
   provider?: Provider
+  children?: ChatItem[]
 }
 
 export interface ModelItem {

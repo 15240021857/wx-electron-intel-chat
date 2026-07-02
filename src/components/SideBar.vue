@@ -78,8 +78,6 @@ const chatStore = useChatStore()
 const { chats, getChats } = useChat()
 // 拿到父对话列表
 const parentChats = computed(() => {
-  console.log('parentChats-chats.value===', chats.value)
-
   return chats.value.filter((item) => !item.pid)
 })
 // 获取历史记录

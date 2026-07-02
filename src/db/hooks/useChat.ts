@@ -4,13 +4,14 @@ import type { Chat, Provider } from '@/types/db'
 import { v4 as uuid } from 'uuid'
 import { liveQuery } from 'dexie'
 import { useChatStore } from '@/store/useChatStore'
+import { ChatItem } from '@/types/chat'
 export const useChat = () => {
-  const chats = ref<Chat[]>([])
+  const chats = ref<ChatItem[]>([])
 
   //   获取对话列表
   const getChats = async () => {
     const chatStore = useChatStore()
-    let list: Chat[] = []
+    let list: ChatItem[] = []
     watchEffect((onInvalidate) => {
       const subscription = liveQuery(async () => {
         list = await db.chats.orderBy('createdAt').reverse().toArray()
@@ -26,11 +27,17 @@ export const useChat = () => {
           },
           {} as Record<string, Provider>
         )
+        const childMap = list.reduce((acc, cur) => {
+          const curParentChildren = acc[cur.pid] || []
+          acc[cur.pid] = [...curParentChildren, cur]
+          return acc
+        }, {})
         list = list.map((item) => {
           return {
             ...item,
             provider: providerMap[item.providerId],
-          } as Chat
+            children: childMap[item.id] || null,
+          } as ChatItem
         })
         console.log('获取对话列表===：', list)
         return list
@@ -65,9 +72,9 @@ export const useChat = () => {
     }
   }
   //   修改对话
-  const updateChat = async (chat: Partial<Chat> & { id: string }) => {
+  const updateChat = async (chat: Omit<Partial<Chat>, 'children'> & { id: string }) => {
     try {
-      const newChatProps = {
+      const newChatProps: any = {
         ...chat,
         updatedAt: new Date(),
       }
@@ -106,8 +113,9 @@ export const useChat = () => {
   const getChildChatById = async (id: string) => {
     try {
       const res = await db.chats.where('pid').equals(id).toArray()
+      // const res = chats.value.find((item) => item.id === id)
       console.log('获取子对话成功：', res)
-      return res
+      return res || null
     } catch (errow) {
       console.error('获取子对话失败：', errow)
       throw errow
