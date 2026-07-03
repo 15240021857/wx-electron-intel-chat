@@ -32,11 +32,7 @@
         v-if="item.role === 'assistant'"
         class="w-full flex flex-row justify-start items-start mt-[16px] rounded-[8px] p-[8px]"
       >
-        <img
-          class="w-[36px] h-[36px] rounded-full"
-          :src="curChatWindowChat?.provider?.providerIcon || chatDefaultIcon || ''"
-          alt=""
-        />
+        <img class="w-[36px] h-[36px] rounded-full" :src="curAssistantIcon" alt="" />
         <!-- <div v-show="!(item.reasoning_content || item.content)"> -->
         <!-- 请求加载中 -->
         <div
@@ -47,7 +43,7 @@
         </div>
         <!-- 输出内容 -->
         <div
-          class="w-full break-words leading-relaxed rounded-[8px] px-[8px] [&_h1]:text-2xl [&_h1]:font-bold [&_p]:my-2 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-800 [&_pre]:text-white [&_pre]:p-4 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-blue-400 [&_blockquote]:bg-blue-50 dark:[&_blockquote]:bg-gray-700 [&_blockquote]:p-3 [&_ul]:pl-6 [&_ul]:my-3 [&_ul]:list-disc [&_ul_ul]:list-circle [&_li]:my-1.5 [&_li]:pl-1 [&_ol]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol_ol]:list-lower-alpha [&_table]:w-full [&_table]:border-collapse [&_table]:whitespace-normal [&_th,&_td]:border [&_th,&_td]:border-gray-300 [&_th,&_td]:px-3 [&_th,&_td]:py-2 [&_th]:bg-gray-100"
+          class="w-full break-words leading-relaxed rounded-[8px] px-[8px] [&_h1]:text-2xl [&_h1]:font-bold [&_p]:my-2 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-gray-800 [&_pre]:text-white [&_pre]:p-4 [&_pre]:rounded-lg [&_blockquote]:border-l-4 [&_blockquote]:border-blue-400 [&_blockquote]:bg-blue-50 dark:[&_blockquote]:bg-gray-700 [&_blockquote]:p-3 [&_ul]:pl-6 [&_ul]:my-3 [&_ul]:list-disc [&_ul_ul]:list-circle [&_li]:my-1.5 [&_li]:pl-1 [&_ol]:pl-6 [&_ol]:my-3 [&_ol]:list-decimal [&_ol_ol]:list-lower-alpha [&_table]:w-full [&_table]:border-collapse [&_table]:whitespace-normal [&_th,&_td]:border [&_th,&_td]:border-gray-300 [&_th,&_td]:px-3 [&_th,&_td]:py-2 [&_th]:bg-gray-100 dark:[&_th]:bg-gray-500"
         >
           <div v-show="item.reasoning_content" class="w-full bg-[#f5f5f5] px-4 py-1">
             <!-- 思考过程 -->
@@ -96,6 +92,9 @@ const props = withDefaults(
     curChatWindowChat: null,
   }
 )
+const curAssistantIcon = computed(() => {
+  return props.curChatWindowChat?.provider?.providerIcon || chatDefaultIcon || ''
+})
 const fmtContentFun = (content: string) => {
   return marked.parse(content, {
     gfm: true,

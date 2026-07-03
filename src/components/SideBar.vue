@@ -1,9 +1,10 @@
 <template>
   <div
-    class="bg-[rgba(241,243,244,1)] dark:bg-gray-700 w-[290px] h-full flex flex-col justify-between p-2 border-r border-r-gray-300 dark:border-r-gray-500"
+    ref="sidebarRef"
+    class="bg-[rgba(241,243,244,1)] dark:bg-gray-700 w-[290px] h-full flex flex-col justify-between p-2 border-r border-r-gray-300 dark:border-r-gray-500 transition-all duration-300 ease-initial -translate-x-full md:translate-x-0 absolute z-[10] md:static"
   >
     <!-- 新建对话 -->
-    <div class="w-full">
+    <div class="w-full flex flex-row items-center gap-2">
       <button class="btn-blank-primary" @click="createChatFun">
         <Icon icon="ant-design:aliwangwang-outlined" width="26" height="26" />
         {{ $t('addChat') }}
@@ -60,11 +61,20 @@
         @click="changePage('/settings')"
       />
     </div>
+
+    <Icon
+      class="absolute z-[99] top-[50%] -translate-y-[-50%] right-[-30px] cursor-pointer dark:text-white md:hidden"
+      :icon="isCollapsed ? 'lucide:sidebar-open' : 'lucide:sidebar-close'"
+      width="30"
+      height="30"
+      title="展开"
+      @click="isCollapsed ? openSidebar() : collapseSidebar()"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport, ScrollAreaCorner } from 'reka-ui'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
@@ -105,6 +115,30 @@ const changePage = (path: string) => {
 
 onMounted(() => {
   getHistoryList()
+})
+// 侧边栏的响应式 展开收起
+const sidebarRef = useTemplateRef<HTMLDivElement>('sidebarRef')
+const isCollapsed = ref(true)
+// 侧边栏小屏幕浮动展开
+const openSidebar = () => {
+  sidebarRef.value?.classList.remove('-translate-x-full')
+  sidebarRef.value?.classList.add('translate-x-0')
+  isCollapsed.value = false
+}
+// 侧边栏小屏幕收起
+const collapseSidebar = () => {
+  sidebarRef.value?.classList.remove('translate-x-0')
+  sidebarRef.value?.classList.add('-translate-x-full')
+  isCollapsed.value = true
+}
+// 监听window resize自动确定展开收起
+window.addEventListener('resize', () => {
+  console.log('window.innerWidth', window.innerWidth)
+  if (window.innerWidth > 768) {
+    openSidebar()
+  } else {
+    collapseSidebar()
+  }
 })
 </script>
 

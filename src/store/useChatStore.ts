@@ -46,6 +46,7 @@ export const useChatStore = defineStore('chatStore', {
       }
       const curChat: ChatItem = await addChat(chatData)
       // this.setChatList([curChat, ...this.chatList])
+
       if (!pid) {
         // 创建子对话时，不用切换当前对话
         this.setcurChat(curChat)

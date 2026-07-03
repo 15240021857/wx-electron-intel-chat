@@ -19,7 +19,7 @@
           v-if="msgList?.length > 0"
           ref="ChartMessageRef"
           class="h-full max-w-3xl mx-auto overflow-visible"
-          :cur-chat-window-chat="curChatWindowChat"
+          :cur-chat-window-chat="childChat || chatStore.curChat"
           :msg-list="msgList"
           :request-loading="sendLoading"
           :out-loading="outLoading"
@@ -34,7 +34,7 @@
         <GroupSelect ref="GroupSelectRef" :cur-chat-window-chat="curChatWindowChat" @on-select="onModelSelect" />
       </div>
       <!-- 聊天输入框 -->
-      <div class="w-full px-5 box-size max-w-3xl mx-auto relative">
+      <div class="w-full px-5 pt-2 box-size max-w-3xl mx-auto relative">
         <SearchInput :out-loading="outLoading" @send-msg="onSendmsg" @stop-cur-msg="stopCurMsg" />
       </div>
     </div>
@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import SearchInput from './components/SearchInput.vue'
 import GroupSelect from './components/GroupSelect.vue'
 import ChartMessage from './components/ChartMessage.vue'
@@ -54,6 +54,7 @@ import { useMsgStore } from '@/store/useMsgStore'
 import { useMessage } from '@/db/hooks/useMessage'
 import { useChat } from '@/db/hooks/useChat'
 import { useModel } from '@/db/hooks/useModel'
+import { Icon } from '@iconify/vue'
 
 // const props = withDefaults(
 //   defineProps<{
@@ -113,6 +114,13 @@ const clearSelectedModel = () => {
   selectedProvider.value = undefined
 }
 const GroupSelectRef = useTemplateRef('GroupSelectRef')
+// watch(
+//   () => childChat.value,
+//   (newChildChat) => {
+//     console.log('newChildChat', newChildChat)
+//     curChatWindowChat.value = childChat.value || chatStore.curChat
+//   }
+// )
 watch(
   () => chatStore.curChat?.id,
   async (newMainChatId) => {
@@ -124,10 +132,10 @@ watch(
     // )
     // 当前对话窗口的对话id【可能主对话，或者子对话】
     curChatWindowChat.value = childChat.value || chatStore.curChat
+    console.log('curChatWindowChat.value!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', curChatWindowChat.value)
     if (newMainChatId) {
       // 拿到该chat的msgList
       const curChatMsgList = await getMessagesByChatId(curChatWindowId.value)
-      console.log('curChatMsgList############################', curChatMsgList)
       msgList.value = curChatMsgList.map((item) => {
         return {
           ...item,

@@ -107,16 +107,19 @@ ipcMain.handle('open-delete-confirm', async (event, arg) => {
     return
   }
   const res = await dialog.showMessageBox(win, {
-    type: 'warning', // 图标：none/info/warning/error/question
-    title: '删除确认',
-    message: '是否确认删除当前条目？',
+    type: 'info', // 图标：none/info/warning/error/question
+    title: '小吴智能助手',
+    message: '是否确实要删除当前条目？',
     detail: '删除后数据将永久丢失，无法找回！',
-    buttons: ['取消', '确认删除'], // 按钮顺序
+    buttons: ['确认删除', '取消'], // 按钮顺序
     defaultId: 0, // 默认选中取消按钮
-    cancelId: 0,
+    cancelId: 1,
+    noLink: true,
+    // checkboxChecked: false,
+    // checkboxLabel: '不再询问',
   })
   // response 是点击按钮的索引：0=取消，1=确认删除
-  return res.response === 1
+  return res.response === 0
 })
 // 前端消息弹窗
 ipcMain.handle('show-message', (event, arg) => {

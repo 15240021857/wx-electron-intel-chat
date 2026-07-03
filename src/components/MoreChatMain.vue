@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, useTemplateRef, shallowRef, computed } from 'vue'
+import { ref, onMounted, watch, useTemplateRef, shallowRef, computed, nextTick } from 'vue'
 import ChatMain from './ChatMain.vue'
 import { Icon } from '@iconify/vue'
 import { useChat } from '@/db/hooks/useChat'
@@ -14,7 +14,6 @@ watch(
   () => chatStore.curChat,
   async (curChat) => {
     if (curChat) {
-      console.log('curChat~~~~~~~~~~~~~~~~~~~~~~~~~', curChat)
       childChats.value = curChat.children || (await getChildChatById(curChat.id))
     }
   }
