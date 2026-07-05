@@ -63,7 +63,7 @@
     </div>
 
     <Icon
-      class="absolute z-[99] top-[50%] -translate-y-[-50%] right-[-30px] cursor-pointer dark:text-white md:hidden"
+      class="absolute z-[99] top-[50%] mt-[-5px] -translate-y-[50%] right-[-30px] cursor-pointer dark:text-white md:hidden"
       :icon="isCollapsed ? 'lucide:sidebar-open' : 'lucide:sidebar-close'"
       width="30"
       height="30"
@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport, ScrollAreaCorner } from 'reka-ui'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
@@ -113,9 +113,6 @@ const changePage = (path: string) => {
   router.push(path)
 }
 
-onMounted(() => {
-  getHistoryList()
-})
 // 侧边栏的响应式 展开收起
 const sidebarRef = useTemplateRef<HTMLDivElement>('sidebarRef')
 const isCollapsed = ref(true)
@@ -132,13 +129,22 @@ const collapseSidebar = () => {
   isCollapsed.value = true
 }
 // 监听window resize自动确定展开收起
-window.addEventListener('resize', () => {
-  console.log('window.innerWidth', window.innerWidth)
-  if (window.innerWidth > 768) {
-    openSidebar()
-  } else {
-    collapseSidebar()
+const handleResize = () => {
+  ;() => {
+    console.log('window.innerWidth', window.innerWidth)
+    if (window.innerWidth > 768) {
+      openSidebar()
+    } else {
+      collapseSidebar()
+    }
   }
+}
+onMounted(() => {
+  getHistoryList()
+  window.addEventListener('resize', handleResize)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
