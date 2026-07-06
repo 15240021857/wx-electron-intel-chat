@@ -135,5 +135,6 @@ ipcMain.handle('show-message', (event, arg) => {
     buttons: ['确定'], // 按钮顺序
     defaultId: 0, // 默认选中取消按钮
     cancelId: 0,
+    noLink: true,
   })
 })

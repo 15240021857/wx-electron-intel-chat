@@ -42,36 +42,21 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import SearchInput from './components/SearchInput.vue'
 import GroupSelect from './components/GroupSelect.vue'
 import ChartMessage from './components/ChartMessage.vue'
 import { callModelHttpAPI } from '@/api/chat'
 import { MsgItem, ProviderParam, SendMsgParams } from '@/types/chat'
-import { Chat, Model } from '@/types/db'
+import { Chat, Message, Model } from '@/types/db'
 import { useChatStore } from '@/store/useChatStore'
 import { useMsgStore } from '@/store/useMsgStore'
-import { useMessage } from '@/db/hooks/useMessage'
-import { useChat } from '@/db/hooks/useChat'
-import { useModel } from '@/db/hooks/useModel'
-import { Icon } from '@iconify/vue'
 
-// const props = withDefaults(
-//   defineProps<{
-//     // 子对话
-//     childChat?: Chat | null
-//   }>(),
-//   {
-//     childChat: null,
-//   }
-// )
 const childChat = defineModel<Chat | null>()
 
 const emits = defineEmits<{
   (e: 'on-outloading-change', outLoading: boolean): void
 }>()
-const { getMessagesByChatId, addUserMessage, addAssistantMessage, updateMessage } = useMessage()
-const { updateChat } = useChat()
 
 const chatStore = useChatStore()
 const msgStore = useMsgStore()
@@ -80,7 +65,6 @@ const curChatWindowId = computed(() => childChat.value?.id || chatStore.curChat?
 // 当前对话窗口-对话
 // const curChatWindowChat = computed(() => props.childChat || chatStore.curChat)
 const curChatWindowChat = ref<Chat>()
-const { getModelById } = useModel()
 
 const { electronIpcApi } = window
 
@@ -92,20 +76,31 @@ const selectedProvider = ref<ProviderParam>()
 const onModelSelect = (model: { selectedModel: Model; selectedProvider: ProviderParam }, isUpdateChat = true) => {
   selectedModel.value = model?.selectedModel
   selectedProvider.value = model?.selectedProvider
+
   // 更新当前chat的model
   if (isUpdateChat && curChatWindowChat.value) {
-    updateChat({
+    const params = {
       id: curChatWindowChat.value?.id,
       modelId: selectedModel.value?.id || '',
       providerId: selectedProvider.value?.id || '',
-    })
-    // 这里怎么做? ========================有问题
-    if (childChat.value) {
-      childChat.value.modelId = selectedModel.value?.id || ''
-      childChat.value.providerId = selectedProvider.value?.id || ''
+    }
+    chatStore.updateChatFun(params)
+    if (!childChat.value) {
+      // 非子对话,更新当前curChat
+      chatStore.setCurChat({
+        ...chatStore.curChat,
+        modelId: selectedModel.value?.id || '',
+        providerId: selectedProvider.value?.id || '',
+      })
     } else {
-      chatStore.curChat.modelId = selectedModel.value?.id || ''
-      chatStore.curChat.providerId = selectedProvider.value?.id || ''
+      // 子对话，更新当前子对话
+      // chatStore.updateChatFun(params)
+      childChat.value = {
+        ...childChat.value,
+        modelId: selectedModel.value?.id || '',
+        providerId: selectedProvider.value?.id || '',
+      }
+      curChatWindowChat.value = childChat.value
     }
   }
 }
@@ -114,28 +109,15 @@ const clearSelectedModel = () => {
   selectedProvider.value = undefined
 }
 const GroupSelectRef = useTemplateRef('GroupSelectRef')
-// watch(
-//   () => childChat.value,
-//   (newChildChat) => {
-//     console.log('newChildChat', newChildChat)
-//     curChatWindowChat.value = childChat.value || chatStore.curChat
-//   }
-// )
 watch(
   () => chatStore.curChat?.id,
   async (newMainChatId) => {
     console.log('切换聊天了newChatId==', newMainChatId, chatStore.curChat)
 
-    // console.log(
-    //   `%c chatStore.curChat======= ${chatStore.curChat?.id} ===\n curChatWindowChat:${curChatWindowChat.value?.id}`,
-    //   'color: blue'
-    // )
-    // 当前对话窗口的对话id【可能主对话，或者子对话】
     curChatWindowChat.value = childChat.value || chatStore.curChat
-    console.log('curChatWindowChat.value!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!', curChatWindowChat.value)
     if (newMainChatId) {
       // 拿到该chat的msgList
-      const curChatMsgList = await getMessagesByChatId(curChatWindowId.value)
+      const curChatMsgList = await msgStore.getMsgListByChatIdFun(curChatWindowId.value)
       msgList.value = curChatMsgList.map((item) => {
         return {
           ...item,
@@ -143,10 +125,6 @@ watch(
           showReasoning: true,
         }
       })
-      // console.log(
-      //   `%c curChat?.modelId======= ${chatStore.curChat?.modelId} === ${curChatWindowId.value}`,
-      //   'color: skyblue'
-      // )
       // 获取当前对话的模型和厂商
       handleCurModelAndProvider(curChatWindowChat.value?.modelId || '')
     } else {
@@ -159,27 +137,18 @@ watch(
   }
 )
 const handleCurModelAndProvider = async (modelId: string) => {
-  const curModel = await getModelById(modelId || (curChatWindowChat.value?.modelId as string))
+  const curModelId = modelId || (curChatWindowChat.value?.modelId as string)
   // 直接调下拉组件的方法获取当前模型和厂商
-  if (modelId) {
-    // 没有，即为首次
-    GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '', false)
-  } else {
+  if (curModelId) {
     // 有modelId，则是正常切换，或是新增对话
-    GroupSelectRef.value?.setModelAndProviderByModel(curModel?.id || '', true)
+    GroupSelectRef.value?.setModelAndProviderByModel(curModelId || '', false)
+  } else {
+    // 没有，即为首次
+    GroupSelectRef.value?.setModelAndProviderByModel(curModelId || '', true)
   }
 }
 // 当前助理流式输出消息
 let curAssistantMsg: MsgItem | null = null
-// 流式输出完成后,更新数据到DB
-const updateAssistantMsgItemWhenDone = async (message: Partial<MsgItem>) => {
-  await updateMessage({
-    id: message.id || '',
-    content: message?.content ?? '',
-    showReasoning: message?.showReasoning,
-    reasoning_content: message?.reasoning_content ?? '',
-  })
-}
 let cleanIpcListener: any = null
 // 聊天请求中断控制器
 let abortController: AbortController | null = null
@@ -207,11 +176,11 @@ const onSendmsg = async (sendParam: SendMsgParams) => {
   if (!chatStore.curChat?.id) {
     await chatStore.createChat({
       title: msg,
-      modelId: selectedModel.value?.value,
+      modelId: selectedModel.value?.id,
       providerId: selectedProvider.value?.id,
     })
   }
-  if (!selectedModel.value?.value) {
+  if (!selectedModel.value?.id) {
     window.electronIpcApi.showMessage({ type: 'warning', message: '请选择模型' })
     return
   }
@@ -232,7 +201,8 @@ const onSendmsg = async (sendParam: SendMsgParams) => {
   if (!selectedProvider.value) {
     return
   }
-  console.log('msgList.value==', msgList.value)
+  console.log('msgList.value！！！！！！！！！！', msgList.value)
+
   if (apiType === 'http') {
     // http请求方式
     handleHttpStream(msgList.value, modelVal, selectedProvider.value)
@@ -241,15 +211,16 @@ const onSendmsg = async (sendParam: SendMsgParams) => {
     handleOpenAIStream(msgList.value, modelVal, { apiKey, baseURL })
   } else {
     // 这里可以调用electron原生的toast
-    alert('暂不支持的请求方式：' + apiType)
+    window.electronIpcApi.showMessage({ type: 'warning', message: '暂不支持的请求方式：' + apiType })
   }
 }
 // 智谱清言提供商
-const handleHttpStream = async (messages: MsgItem[], model = 'glm-4.7-flash', provider: ProviderParam) => {
+const handleHttpStream = async (messages: Message[], model = 'glm-4.7-flash', provider: ProviderParam) => {
   // 请求加载中
   sendLoading.value = true
   // 先添加助理消息
   curAssistantMsg = await addAssistantMsgItem()
+
   // 发起请求智能体
   let res = null
   try {
@@ -369,52 +340,31 @@ const handleOpenAIStream = async (
 }
 // 添加对话标题
 const handleChatTitle = async (msg: string) => {
-  if (!curChatWindowChat.value?.title || curChatWindowChat.value?.title === '') {
-    await updateChat({
+  if (!curChatWindowChat.value?.title) {
+    await chatStore.updateChatFun({
       id: curChatWindowChat.value?.id || '',
       title: msg,
     })
-    // chatStore.refreshChatList()
-    if (childChat.value) {
-      // 是子就更新子
-      childChat.value.title = msg
-    } else {
-      // 是主就更新主对话
-      chatStore.curChat && (chatStore.curChat.title = msg)
+    if (!childChat.value) {
+      chatStore.setCurChat({
+        ...chatStore.curChat,
+        title: msg,
+      })
     }
   }
 }
 // 添加用户消息
 const addUserMsgItem = async (msgParams: SendMsgParams) => {
-  const curMsg: MsgItem = await addUserMessage(curChatWindowChat.value?.id || '', msgParams)
-  msgList.value = [...msgList.value, curMsg]
-  msgStore.addMsg(curMsg)
+  const curMsg: MsgItem = await msgStore.addUserMessageFun(curChatWindowChat.value?.id || '', msgParams)
+  msgList.value.push(curMsg)
   return curMsg
 }
 // 添加智能助手初始消息
 const addAssistantMsgItem = async (content?: string) => {
-  const curMsg: MsgItem = await addAssistantMessage(curChatWindowChat.value?.id || '', content ?? '')
+  const curMsg: MsgItem = await msgStore.addAssistantMessageFun(curChatWindowChat.value?.id || '', content ?? '')
   msgList.value.push(curMsg)
-  // 维护所有msg
-  msgStore.addMsg(curMsg)
   return curMsg
 }
-// // 文字一次性输出版
-// const readJsonFun = (res: any) => {
-//   const message = res?.choices?.[0]?.message || null
-
-//   const askMsg: MsgItem = {
-//     id: new Date().getTime(),
-//     role: message?.role || '',
-//     reasoning_content: '',
-//     content: message?.content || '',
-//     chatId: chatStore.curChat?.id || '',
-//     showReasoning: true,
-//   }
-//   msgList.value.push(askMsg)
-//   // 维护所有msg
-//   msgStore.addMsg(askMsg)
-// }
 const ChartMessageRef = useTemplateRef<InstanceType<typeof ChartMessage>>('ChartMessageRef')
 
 // 移除steam流式输出事件监听
@@ -443,7 +393,6 @@ const onStreamDataLisitener = () => {
 
     curMsg && (curMsg.content += content)
     ChartMessageRef.value?.scrollToBottom()
-    // console.log('curAssistantMsg==', curMsg);
   })
   removeStreamAbortListener = electronIpcApi.onStreamAbort((e: Event, data: { requestId: string }) => {
     // if (!curAssistantMsg) {
@@ -492,13 +441,15 @@ const onStreamDataLisitener = () => {
     updateDBSteamMsg()
   })
 }
+// 流式输出完成后,更新数据到DB
 const updateDBSteamMsg = async () => {
   const curMsg = msgList.value.find((item) => item?.id === curAssistantMsg?.id)
   console.log('curAssistantMsg==', curAssistantMsg)
-  await updateAssistantMsgItemWhenDone({
-    id: curMsg?.id || '',
-    content: curMsg?.content || '',
-    reasoning_content: curMsg?.reasoning_content || '',
+  await msgStore.updateMessageFun({
+    id: curMsg.id || '',
+    content: curMsg?.content ?? '',
+    showReasoning: curMsg?.showReasoning,
+    reasoning_content: curMsg?.reasoning_content ?? '',
   })
 }
 // 正在输出中...

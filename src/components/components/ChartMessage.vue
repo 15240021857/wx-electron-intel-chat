@@ -77,6 +77,7 @@ import { MsgItem } from '@/types/chat'
 import { Chat } from '@/types/db'
 import UserIcon from '@/assets/cool.png'
 import chatDefaultIcon from '@/assets/images/tdesign--logo-android.png'
+import { useProviderStore } from '@/store/useProviderStore'
 
 const props = withDefaults(
   defineProps<{
@@ -92,8 +93,14 @@ const props = withDefaults(
     curChatWindowChat: null,
   }
 )
+const providerStore = useProviderStore()
+// 当前对话的厂商icon
 const curAssistantIcon = computed(() => {
-  return props.curChatWindowChat?.provider?.providerIcon || chatDefaultIcon || ''
+  const curProvider = providerStore.providerMap?.[props.curChatWindowChat?.providerId]
+  // console.log('providerStore.providerMap=================', providerStore.providerMap)
+  console.log('curProvider=================', curProvider)
+  console.log('props.curChatWindowChat========================', props.curChatWindowChat)
+  return curProvider?.providerIcon || chatDefaultIcon || ''
 })
 const fmtContentFun = (content: string) => {
   return marked.parse(content, {

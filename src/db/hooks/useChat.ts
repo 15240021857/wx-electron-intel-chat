@@ -10,46 +10,48 @@ export const useChat = () => {
 
   //   获取对话列表
   const getChats = async () => {
-    const chatStore = useChatStore()
+    // const chatStore = useChatStore()
     let list: ChatItem[] = []
-    watchEffect((onInvalidate) => {
-      const subscription = liveQuery(async () => {
-        list = await db.chats.orderBy('createdAt').reverse().toArray()
-        // 拿到providerId[]
-        const providerIds = list.map((item) => item.providerId)
-        const ids = [...new Set(providerIds)]
-        const providerList = await db.providers.where('id').anyOf(ids).toArray()
-        // const providerMap = new Map(providerList.map((item) => [item.id, item]))
-        const providerMap = providerList.reduce(
-          (acc, cur) => {
-            acc[cur.id] = cur
-            return acc
-          },
-          {} as Record<string, Provider>
-        )
-        const childMap = list.reduce((acc, cur) => {
-          const curParentChildren = acc[cur.pid] || []
-          acc[cur.pid] = [...curParentChildren, cur]
-          return acc
-        }, {})
-        list = list.map((item) => {
-          return {
-            ...item,
-            provider: providerMap[item.providerId],
-            children: childMap[item.id] || null,
-          } as ChatItem
-        })
-        console.log('获取对话列表===：', list)
-        return list
-      }).subscribe((list) => {
-        chats.value = list
-        console.log('subscribe===：', list)
-        chatStore.setChatList(list)
-      })
-      onInvalidate(() => {
-        subscription.unsubscribe()
-      })
-    })
+    list = await db.chats.orderBy('createdAt').reverse().toArray()
+    return list
+    // watchEffect((onInvalidate) => {
+    //   const subscription = liveQuery(async () => {
+    //     list = await db.chats.orderBy('createdAt').reverse().toArray()
+    //     // 拿到providerId[]
+    //     const providerIds = list.map((item) => item.providerId)
+    //     const ids = [...new Set(providerIds)]
+    //     const providerList = await db.providers.where('id').anyOf(ids).toArray()
+    //     // const providerMap = new Map(providerList.map((item) => [item.id, item]))
+    //     const providerMap = providerList.reduce(
+    //       (acc, cur) => {
+    //         acc[cur.id] = cur
+    //         return acc
+    //       },
+    //       {} as Record<string, Provider>
+    //     )
+    //     const childMap = list.reduce((acc, cur) => {
+    //       const curParentChildren = acc[cur.pid] || []
+    //       acc[cur.pid] = [...curParentChildren, cur]
+    //       return acc
+    //     }, {})
+    //     list = list.map((item) => {
+    //       return {
+    //         ...item,
+    //         provider: providerMap[item.providerId],
+    //         children: childMap[item.id] || null,
+    //       } as ChatItem
+    //     })
+    //     console.log('获取对话列表===：', list)
+    //     return list
+    //   }).subscribe((list) => {
+    //     chats.value = list
+    //     console.log('subscribe===：', list)
+    //     chatStore.setChatList(list)
+    //   })
+    //   onInvalidate(() => {
+    //     subscription.unsubscribe()
+    //   })
+    // })
   }
   //   添加对话
   const addChat = async (chat: Omit<Chat, 'id' | 'createdAt' | 'updatedAt'>): Promise<Chat> => {
@@ -80,7 +82,7 @@ export const useChat = () => {
       }
       const res = await db.chats.update(chat.id, newChatProps)
       console.log('修改成功：', res)
-      // await getChats()
+      return newChatProps
     } catch (error) {
       console.error('修改对话失败：', error)
     }
@@ -92,7 +94,6 @@ export const useChat = () => {
       console.log('删除对话：', id)
       const res = await db.chats.delete(id)
       console.log('删除成功：', res)
-      // getChats()
     } catch (error) {
       console.error('删除对话失败：', error)
     }

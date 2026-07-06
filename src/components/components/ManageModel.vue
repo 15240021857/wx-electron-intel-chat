@@ -11,40 +11,42 @@ import {
   SwitchThumb,
   Label,
 } from 'reka-ui'
-import { useProvider } from '@/db/hooks/useProvider'
-import { useModel } from '@/db/hooks/useModel'
 import { ProviderItem } from '@/types/chat'
-import { ApiResult } from '../../types/global'
 import ModelDialog from './components/ModelDialog.vue'
-import { Model } from '@/types/db'
+import { Model, Provider } from '@/types/db'
 import { useProviderStore } from '@/store/useProviderStore'
 import WxUploadAvatar from '@/components/wx-reka/WxUploadAvatar.vue'
+import { useModelStore } from '@/store/useModelStore'
+import { storeToRefs } from 'pinia'
 
-const { providers, getProviders, addProvider, updateProvider, deleteProvider, toggleProvider } = useProvider()
-const { models, getModels, deleteModel, bulkPutModel, toggleModel } = useModel()
-const providerList = ref<ProviderItem[]>([])
+const providerStore = useProviderStore()
+const { providerList } = storeToRefs(providerStore)
+
+const modelStore = useModelStore()
+
+// const { providers, getProviders, addProvider, updateProvider, deleteProvider, toggleProvider } = useProvider()
+// const { getModels, deleteModel, bulkPutModel, toggleModel } = useModel()
+// const providerList = ref<ProviderItem[]>([])
 const activeId = ref<string>('')
 const getProvidersFun = async () => {
-  await getProviders()
+  await providerStore.getProviderList()
   await getModelsOfProvider()
   activeId.value = providerList.value[0]?.id
 }
 // 获取供应商的模型列表
 const getModelsOfProvider = async () => {
-  await getModels()
-  console.log('providers==', providers.value)
-  console.log('models==', models.value)
-  providerList.value = providers.value.map((item) => {
-    const curModelList = models.value
-      .filter((model) => model.providerId === item.id)
-      .map((model) => {
-        return toRaw(model)
-      })
-    return {
-      ...item,
-      modelList: [...curModelList],
-    }
-  })
+  await modelStore.getModelList()
+  // providerList.value = providers.value.map((item) => {
+  //   const curModelList = models.value
+  //     .filter((model) => model.providerId === item.id)
+  //     .map((model) => {
+  //       return toRaw(model)
+  //     })
+  //   return {
+  //     ...item,
+  //     modelList: [...curModelList],
+  //   }
+  // })
 }
 // 是否新增
 const isAdding = ref(false)
@@ -89,50 +91,30 @@ const saveProvider = async () => {
   if (isAdding.value) {
     // 保存新增
     const { id, createdAt, updatedAt, modelList, ...newProvider } = providerList.value[0]
-    const res: ApiResult = await addProvider(newProvider)
-    if (res.code === 200) {
-      console.log('新增成功')
-      cancelAdd()
-      getProvidersFun()
-    } else {
-      console.log('新增失败')
-    }
+    await providerStore.addProviderFun(newProvider)
+    console.log('新增成功')
+    cancelAdd()
+    getProvidersFun()
   } else {
     // 保存修改activeId的厂商
     const curProvider = providerList.value.find((item) => item.id === activeId.value)
     if (curProvider) {
       const { createdAt, updatedAt, modelList, ...ProviderParam } = curProvider
       console.log('修改参数', ProviderParam)
-      const res = await updateProvider(ProviderParam)
-      if (res.code === 200) {
-        console.log('修改成功')
-      } else {
-        console.log('修改失败')
-      }
+      await providerStore.updateProviderFun(ProviderParam)
+      console.log('修改成功')
       //   修改其模型
       console.log('修改其模型', modelList)
       const modelListParams = modelList.map((item) => toRaw(item))
-      const bulkPutRes = await bulkPutModel(modelListParams)
-      if (bulkPutRes.code === 200) {
-        console.log('修改模型成功')
-      } else {
-        console.log('修改模型失败')
-      }
-      // getProvidersFun()
+      await modelStore.bulkPutModelFun(modelListParams)
+      console.log('修改模型成功')
     }
   }
 }
-const providerStore = useProviderStore()
 // 启用禁用供应商
-const toggleProviderFun = async (providerId: string, enabled: 0 | 1) => {
-  const curEnabled = enabled === 1 ? 0 : 1
-  const res = await toggleProvider(providerId, curEnabled)
-  if (res.code === 200) {
-    providerStore.getEnabledProviderList()
-    console.log('修改成功')
-  } else {
-    console.log('修改失败')
-  }
+const toggleProviderFun = async (providerId: string) => {
+  await providerStore.toggleProviderFun(providerId)
+  console.log('修改成功')
 }
 // 处理厂商icon
 const handleProviderIconChange = (url: string, provider: any) => {
@@ -154,13 +136,8 @@ const openDeleteProvider = (id: string) => {
 }
 const deleteProviderFun = async (id: string) => {
   console.log('删除厂商', id)
-  const res = await deleteProvider(id)
-  if (res.code === 200) {
-    console.log('删除成功')
-    getProvidersFun()
-  } else {
-    console.log('删除失败')
-  }
+  await providerStore.deleteProviderFun(id)
+  console.log('删除成功')
 }
 // 模型管理
 const onModelSuccess = (providerId: string) => {
@@ -173,7 +150,7 @@ const modelDialogRef = useTemplateRef<InstanceType<typeof ModelDialog>>('modelDi
 const modelDialogType = ref<'add' | 'edit'>('add')
 interface ModelDialogParam {
   model?: Model
-  provider?: ProviderItem
+  provider?: Provider
 }
 const openModelDialog = (type: 'add' | 'edit', param: ModelDialogParam) => {
   modelDialogType.value = type
@@ -189,27 +166,16 @@ const openDeleteModel = (id: string) => {
   window.electronIpcApi.openDeleteConfrim().then(async (res: boolean) => {
     if (res) {
       console.log('删除模型', id)
-      const res = await deleteModel(id)
-      if (res.code === 200) {
-        console.log('删除成功')
-        getProvidersFun()
-      } else {
-        console.log('删除失败')
-      }
+      await modelStore.deleteModelFun(id)
+      console.log('删除成功')
     }
   })
 }
 
 // 启用禁用供应商
-const toggleModelFun = async (modelId: string, enabled: 0 | 1) => {
-  const curEnabled = enabled === 1 ? 0 : 1
-  const res = await toggleModel(modelId, curEnabled)
-  if (res.code === 200) {
-    providerStore.getEnabledProviderList()
-    console.log('修改成功')
-  } else {
-    console.log('修改失败')
-  }
+const toggleModelFun = async (modelId: string) => {
+  await modelStore.toggleModelFun(modelId)
+  console.log('修改成功')
 }
 onMounted(() => {
   getProvidersFun()
@@ -268,7 +234,7 @@ onMounted(() => {
                   :true-value="1"
                   :false-value="0"
                   class="switch-primary ml-1"
-                  @click="toggleProviderFun(item.id, item.enabled)"
+                  @click="toggleProviderFun(item.id)"
                 >
                   <SwitchThumb
                     class="w-3.5 h-3.5 my-auto bg-white text-xs flex items-center justify-center shadow-xl rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-full"
@@ -338,9 +304,9 @@ onMounted(() => {
                   </div>
                 </div>
                 <div class="flex flex-col gap-y-2">
-                  <template v-if="item.modelList?.length > 0">
+                  <template v-if="modelStore.allProviderModelMap?.[item.id]?.length > 0">
                     <div
-                      v-for="model in item.modelList"
+                      v-for="model in modelStore.allProviderModelMap?.[item.id]"
                       :key="model.id"
                       class="flex flex-row justify-between items-center border-b border-dashed border-color-gray-200 py-1"
                     >
@@ -366,7 +332,7 @@ onMounted(() => {
                           :true-value="1"
                           :false-value="0"
                           class="switch-primary ml-1"
-                          @click="toggleModelFun(model.id, model.enabled)"
+                          @click="toggleModelFun(model.id)"
                         >
                           <SwitchThumb
                             class="w-3.5 h-3.5 my-auto bg-white text-xs flex items-center justify-center shadow-xl rounded-full transition-transform translate-x-0.5 will-change-transform data-[state=checked]:translate-x-full"

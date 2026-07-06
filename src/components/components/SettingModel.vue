@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import WxSelect from '../wx-reka/WxSelect.vue'
-import { Option, Result } from '@/types/settings'
+import { Option } from '@/types/settings'
 import ManageModel from './ManageModel.vue'
 import { useProviderStore } from '@/store/useProviderStore'
 import { useSettingStore } from '@/store/useSettingStore'
+import { useModelStore } from '@/store/useModelStore.js'
 // import
 const providerStore = useProviderStore()
+const modelStore = useModelStore()
 // 默认模型
 const options = computed<Option[]>(() => {
   return providerStore.enabledProviderList.map((item) => {
+    const modelList = modelStore.providerModelMap[item.id] || null
     return {
       label: item.label,
       value: item.id,
-      children: item.modelList.map((model) => {
+      children: modelList?.map((model) => {
         return {
           label: model.label,
           value: model.id,
@@ -33,12 +36,12 @@ const onDefaultModelChange = async () => {
   })
 }
 const getProviderListFun = async () => {
-  await providerStore.getEnabledProviderList()
-  // options.value =
+  await providerStore.getProviderList()
+  await modelStore.getModelList()
 }
-onMounted(() => {
-  getProviderListFun()
-  getGlobalSetting()
+onMounted(async () => {
+  await getProviderListFun()
+  await getGlobalSetting()
 })
 </script>
 

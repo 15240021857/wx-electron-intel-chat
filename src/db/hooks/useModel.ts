@@ -4,7 +4,6 @@ import type { Model } from '@/types/db'
 import { v4 as uuid } from 'uuid'
 
 export const useModel = () => {
-  const models = ref<Model[]>([])
   const getModels = async (params?: Partial<Model>) => {
     let list = await db.models.orderBy('createdAt').reverse().toArray()
     console.log('获取模型列表：', list)
@@ -14,7 +13,7 @@ export const useModel = () => {
     if (params?.enabled !== undefined) {
       list = list.filter((item) => item.enabled === params.enabled)
     }
-    models.value = list
+    return list
   }
   //   获取模型列表
   const getModelsByProviderId = async (providerId: string, enabled?: 0 | 1 | undefined): Promise<Model[]> => {
@@ -50,7 +49,7 @@ export const useModel = () => {
       return {
         code: 200,
         message: 'success',
-        data: res,
+        data: newItem,
       }
     } catch (error) {
       console.error('添加失败：', error)
@@ -61,22 +60,17 @@ export const useModel = () => {
   const updateModel = async (model: Partial<Model> & { id: string }) => {
     try {
       console.log('修改模型：', model)
-      const res = await db.models.update(model.id, {
+      const newItem = {
         ...model,
         capacity: model.capacity || ['text'],
-      })
-      console.log('修改成功：', res)
-      const curIndex = models.value.findIndex((item) => item.id === model.id)
-      if (curIndex !== -1) {
-        models.value[curIndex] = {
-          ...models.value[curIndex],
-          ...model,
-        }
       }
+      const res = await db.models.update(model.id, newItem)
+      console.log('修改成功：', res)
+
       return {
         code: 200,
         message: 'success',
-        data: res,
+        data: newItem,
       }
     } catch (error) {
       console.error('修改模型失败：', error)
@@ -98,7 +92,7 @@ export const useModel = () => {
       })
       const res = await db.models.bulkPut(paramList)
       console.log('批量修改成功：', res)
-      models.value = [...modelList]
+      // models.value = [...modelList]
       return {
         code: 200,
         message: 'success',
@@ -116,8 +110,6 @@ export const useModel = () => {
       console.log('删除模型：', id)
       const res = await db.models.delete(id)
       console.log('删除成功：', res)
-      // 更新models
-      models.value = models.value.filter((item) => item.id !== id)
       return {
         code: 200,
         message: 'success',
@@ -135,7 +127,6 @@ export const useModel = () => {
   }
 
   return {
-    models,
     getModels,
     getModelsByProviderId,
     addModel,

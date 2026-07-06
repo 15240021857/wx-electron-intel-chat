@@ -11,7 +11,7 @@ import {
 import { Icon } from '@iconify/vue'
 import WxDialog from '@/components/wx-reka/WxDialog.vue'
 import { ProviderItem, ModelItem } from '@/types/chat'
-import { Model } from '@/types/db'
+import { Model, Provider } from '@/types/db'
 import WxSelect from '@/components/wx-reka/WxSelect.vue'
 import WxCheckBox from '@/components/wx-reka/WxCheckbox.vue'
 import { useModel } from '@/db/hooks/useModel'
@@ -82,7 +82,7 @@ const onClose = () => {
 }
 interface ModelDialogParam {
   model?: Model
-  provider?: ProviderItem
+  provider?: Provider
 }
 const WxDialogRef = useTemplateRef<InstanceType<typeof WxDialog>>('WxDialogRef')
 const providerName = ref('')

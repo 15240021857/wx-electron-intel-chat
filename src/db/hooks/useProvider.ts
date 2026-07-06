@@ -18,7 +18,7 @@ export const useProvider = () => {
     if (condition?.enabled !== undefined) {
       list = list.filter((item) => item.enabled === condition.enabled)
     }
-    providers.value = list
+    return list
   }
   const getProviderById = async (id: string) => {
     const item = await db.providers.get(id)
@@ -36,12 +36,11 @@ export const useProvider = () => {
         updatedAt: new Date(),
       }
       const res = await db.providers.add(newItem)
-      providers.value = [...providers.value, newItem]
       console.log('添加成功：', res)
       return {
         code: 200,
         message: 'success',
-        data: res,
+        data: newItem,
       }
     } catch (error) {
       console.error('添加厂商失败：', error)
@@ -58,17 +57,17 @@ export const useProvider = () => {
       }
       const res = await db.providers.update(provider.id, newProp)
       console.log('修改成功：', res)
-      const curIndex = providers.value.findIndex((item) => item.id === provider.id)
-      if (curIndex !== -1) {
-        providers.value[curIndex] = {
-          ...providers.value[curIndex],
-          ...newProp,
-        }
-      }
+      // const curIndex = providers.value.findIndex((item) => item.id === provider.id)
+      // if (curIndex !== -1) {
+      //   providers.value[curIndex] = {
+      //     ...providers.value[curIndex],
+      //     ...newProp,
+      //   }
+      // }
       return {
         code: 200,
         message: 'success',
-        data: res,
+        data: newProp,
       }
     } catch (error) {
       console.error('修改厂商失败：', error)
@@ -81,7 +80,7 @@ export const useProvider = () => {
     try {
       console.log('删除厂商：', id)
       const res = await db.providers.delete(id)
-      providers.value = providers.value.filter((item) => item.id !== id)
+      // providers.value = providers.value.filter((item) => item.id !== id)
       return {
         code: 200,
         message: 'success',
@@ -96,11 +95,6 @@ export const useProvider = () => {
   const toggleProvider = async (id: string, enabled: 0 | 1) => {
     const res = await updateProvider({ id, enabled })
     return res
-    // 是否更新providers列表中的该provider的enabled状态
-    // const curIndex = providers.value.findIndex((item) => item.id === id)
-    // if (curIndex !== -1) {
-    //   providers.value[curIndex].enabled = enabled
-    // }
   }
 
   return {

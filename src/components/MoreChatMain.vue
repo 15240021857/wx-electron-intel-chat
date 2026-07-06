@@ -14,7 +14,7 @@ watch(
   () => chatStore.curChat,
   async (curChat) => {
     if (curChat) {
-      childChats.value = curChat.children || (await getChildChatById(curChat.id))
+      childChats.value = await chatStore.getChildChatByIdFun(curChat.id)
     }
   }
 )
@@ -26,8 +26,8 @@ const addChildChat = async (parentId: string) => {
     window.electronIpcApi.showMessage({ type: 'warning', message: '至多创建两个子对话' })
     return
   }
-  chatStore.createChat({ pid: parentId })
-  childChats.value = chatStore.curChat?.children || (await getChildChatById(parentId))
+  chatStore.createChat({ pid: parentId, title: '', modelId: '', providerId: '' })
+  childChats.value = await chatStore.getChildChatByIdFun(parentId)
 }
 // 向所有对话，包括子对话发送消息
 const mainChatRef = useTemplateRef<InstanceType<typeof ChatMain>>('mainChatRef')

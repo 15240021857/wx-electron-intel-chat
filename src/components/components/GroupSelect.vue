@@ -20,7 +20,7 @@
     <WxSelect
       id="defaultModel"
       v-model="curModelId"
-      :options="options"
+      :options="providerModelList"
       :placeholder="$t('common.placeholder', { label: $t('smartModel') })"
       @on-change="onchange"
     >
@@ -37,17 +37,14 @@
 </template>
 
 <script lang="ts" setup>
-import { useChatStore } from '@/store/useChatStore'
-import { ModelItem, ProviderParam } from '@/types/chat'
-import { computed, onMounted, ref, watch } from 'vue'
-import { useChat } from '@/db/hooks/useChat'
+import { ProviderParam } from '@/types/chat'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useProviderStore } from '@/store/useProviderStore'
 import { Model, Chat } from '@/types/db'
 import { Icon } from '@iconify/vue'
 import WxSelect from '@/components/wx-reka/WxSelect.vue'
-import { Option } from '@/types/settings'
 import { useSettingStore } from '@/store/useSettingStore'
-const { updateChat } = useChat()
+import { useModelStore } from '@/store/useModelStore'
 
 const props = withDefaults(
   defineProps<{
@@ -58,38 +55,39 @@ const props = withDefaults(
     curChatWindowChat: null,
   }
 )
-const chatStore = useChatStore()
 const emits = defineEmits<{
   (
     e: 'onSelect',
-    model: { selectedModel: ModelItem | null; selectedProvider: ProviderParam | null },
+    model: { selectedModel: Model | null; selectedProvider: ProviderParam | null },
     isUpdateChat: boolean
   ): void
 }>()
-// defineSlots<{
-//   appendIcon: { row: { label: string; value: string; capacity?: string[] } }
-// }>()
 // 获取启用的供应商
 const providerStore = useProviderStore()
-const getProviderList = async () => {
-  await providerStore.getEnabledProviderList()
-}
-const curModelId = ref('')
-const options = computed<Option[]>(() => {
-  return providerStore.enabledProviderList.map((item) => {
+const modelStore = useModelStore()
+// 计算出厂商模型列表 - 有变化自适应厂商和模型变动
+const providerModelList = computed(() => {
+  return providerStore.enabledProviderList?.map((item) => {
+    const curModelList = modelStore.providerModelMap?.[item.id]?.map((model) => {
+      return {
+        label: model.label,
+        value: model.id,
+        capacity: model.capacity,
+      }
+    })
     return {
       label: item.label,
       value: item.id,
-      children: item.modelList.map((model) => {
-        return {
-          label: model.label,
-          value: model.id,
-          capacity: model.capacity,
-        }
-      }),
+      children: curModelList || [],
     }
   })
 })
+// 获取厂商模型
+const getProviderList = async () => {
+  await providerStore.getProviderList()
+  await modelStore.getModelList()
+}
+const curModelId = ref('')
 
 // 根据选中模型拿到当前模型和供应商
 const setModelAndProviderByModel = async (selectedModelId: string, isUpdateChat = true) => {
@@ -97,12 +95,11 @@ const setModelAndProviderByModel = async (selectedModelId: string, isUpdateChat 
   const { provider, model } = await providerStore.getProviderAndModelByModelId(selectedModelId || curModelId.value, {
     providerProps: ['id', 'apiKey', 'baseURL'],
   })
-
   emits(
     'onSelect',
     {
-      selectedModel: model || ({} as Model),
-      selectedProvider: provider || ({} as ProviderParam),
+      selectedModel: (model || {}) as Model,
+      selectedProvider: (provider || {}) as ProviderParam,
     },
     isUpdateChat
   )
@@ -119,8 +116,8 @@ const getDefaultModelId = async () => {
   curModelId.value = props.curChatWindowChat?.modelId || settingStore.globalSetting?.defaultModelId || ''
   setModelAndProviderByModel(curModelId.value)
 }
-onMounted(() => {
-  getProviderList()
+onMounted(async () => {
+  await getProviderList()
   getDefaultModelId()
 })
 defineExpose({

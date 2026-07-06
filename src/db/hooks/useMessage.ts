@@ -11,7 +11,8 @@ export const useMessage = () => {
   const getMessages = async () => {
     const list = await db.messages.orderBy('createdAt').toArray()
     console.log('获取消息列表：', list)
-    messages.value = list
+    // messages.value = list
+    return list
   }
   const getMessagesByChatId = async (chatId: string): Promise<Message[]> => {
     const list = await db.messages.where('chatId').equals(chatId).sortBy('createdAt')
@@ -68,13 +69,19 @@ export const useMessage = () => {
     try {
       const res = await db.messages.update(message.id, message)
       console.log('修改成功：', res)
-      // 修改当前消息内容
-      const curIndex = messages.value.findIndex((item) => item.id === message.id)
-      if (curIndex !== -1) {
-        messages.value[curIndex].content = message.content || messages.value[curIndex].content
+      // // 修改当前消息内容
+      // const curIndex = messages.value.findIndex((item) => item.id === message.id)
+      // if (curIndex !== -1) {
+      //   messages.value[curIndex].content = message.content || messages.value[curIndex].content
+      // }
+      return {
+        code: 200,
+        message: 'success',
+        data: message,
       }
     } catch (error) {
       console.error('修改消息失败：', error)
+      throw error
     }
   }
 
@@ -84,7 +91,6 @@ export const useMessage = () => {
       console.log('删除消息：', id)
       const res = await db.messages.delete(id)
       console.log('删除成功：', res)
-      messages.value = messages.value.filter((item) => item.id !== id)
     } catch (error) {
       console.error('删除消息失败：', error)
     }

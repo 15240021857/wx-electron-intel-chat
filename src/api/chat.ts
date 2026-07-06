@@ -7,6 +7,7 @@ export const callModelHttpAPI = async ({
   stream = false,
   signal = null,
   provider = {
+    id: '',
     apiKey: '5e9ff230a8364875bbeaacb5685b110a.zyNRE10Cd1g83043',
     baseURL: 'https://open.bigmodel.cn/api/paas/v4/chat/completions',
   },

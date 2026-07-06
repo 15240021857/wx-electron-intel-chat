@@ -23,7 +23,7 @@
               @click="changeChatFun(item)"
             >
               <img
-                :src="item.provider?.providerIcon || chatDefaultIcon"
+                :src="providerMap[item.providerId]?.providerIcon || chatDefaultIcon"
                 alt=""
                 class="w-[32px] h-[32px] aspect-square rounded-full object-contain dark:bg-gray-200"
               />
@@ -74,26 +74,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import { onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
 import { ScrollAreaRoot, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaViewport, ScrollAreaCorner } from 'reka-ui'
 import { Icon } from '@iconify/vue'
 import { useChatStore } from '@/store/useChatStore'
-import { ChatItem } from '@/types/chat'
+import { useProviderStore } from '@/store/useProviderStore'
 import { useRouter, useRoute } from 'vue-router'
-import { useChat } from '@/db/hooks/useChat'
 import chatDefaultIcon from '@/assets/images/tdesign--logo-android.png'
+import { storeToRefs } from 'pinia'
+import { Chat } from '@/types/db'
 
 // 对话数据类型
+const { parentChats } = storeToRefs(useChatStore())
 const chatStore = useChatStore()
-const { chats, getChats } = useChat()
-// 拿到父对话列表
-const parentChats = computed(() => {
-  return chats.value.filter((item) => !item.pid)
-})
+
+const providerStore = useProviderStore()
+const { providerMap } = storeToRefs(providerStore)
+
 // 获取历史记录
 const getHistoryList = async () => {
-  // await chatStore.getChatList()
-  await getChats()
+  await chatStore.getChatList()
+  await providerStore.getProviderList()
 }
 // 创建对话
 const createChatFun = async () => {
@@ -102,12 +103,12 @@ const createChatFun = async () => {
 const route = useRoute()
 const router = useRouter()
 // 切换对话
-const changeChatFun = (item: ChatItem) => {
+const changeChatFun = (item: Chat) => {
   const isHomePage = route.path === '/'
   if (!isHomePage) {
     router.push('/')
   }
-  chatStore.setcurChat(item)
+  chatStore.setCurChat(item)
 }
 const changePage = (path: string) => {
   router.push(path)
