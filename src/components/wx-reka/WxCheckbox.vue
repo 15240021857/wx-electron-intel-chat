@@ -49,7 +49,7 @@ watch(
         </CheckboxIndicator>
       </CheckboxRoot>
 
-      <span class="select-none text-stone-700 text-sm dark:text-white">{{
+      <span class="select-none text-stone-700 text-sm dark:text-dark-500">{{
         item.i18nKey ? $t(item.i18nKey) : item.label
       }}</span>
     </label>

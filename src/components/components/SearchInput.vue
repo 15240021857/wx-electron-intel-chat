@@ -42,7 +42,7 @@
         name="keywords"
         rows="1"
         cols="20"
-        :placeholder="$t('sendInputPlaceholder')"
+        :placeholder="placeholder || $t('sendInputPlaceholder')"
         @keydown="onInputKeyDown"
         @input="ajustHeight"
         @focus="onInputFocus"
@@ -123,6 +123,7 @@ import { onClickOutside } from '@vueuse/core'
 
 defineProps<{
   outLoading: boolean // 流式输出中
+  placeholder?: string // 占位符
 }>()
 
 const emits = defineEmits<{

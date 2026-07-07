@@ -70,6 +70,7 @@
     "@radix-ui/colors": "^3.0.0",
     "@tailwindcss/vite": "^4.2.1",
     "@vueuse/core": "^14.3.0",
+    "dayjs": "^1.11.21",
     "dexie": "^4.4.4",
     "dotenv": "^17.4.2",
     "electron-squirrel-startup": "^1.0.1",

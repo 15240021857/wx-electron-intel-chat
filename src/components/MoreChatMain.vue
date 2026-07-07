@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, useTemplateRef, shallowRef, computed, nextTick } from 'vue'
+import { ref, watch, useTemplateRef, shallowRef, computed } from 'vue'
 import ChatMain from './ChatMain.vue'
 import { Icon } from '@iconify/vue'
-import { useChat } from '@/db/hooks/useChat'
 import { useChatStore } from '@/store/useChatStore'
 import { Chat } from '@/types/db'
 import SearchInput from './components/SearchInput.vue'
 import { SendMsgParams } from '@/types/chat.js'
-const { getChildChatById } = useChat()
 const chatStore = useChatStore()
 const childChats = ref<Chat[]>([])
 watch(
@@ -26,8 +24,15 @@ const addChildChat = async (parentId: string) => {
     window.electronIpcApi.showMessage({ type: 'warning', message: '至多创建两个子对话' })
     return
   }
+  if (!parentId) {
+    window.electronIpcApi.showMessage({ type: 'warning', message: '请选择父对话' })
+    return
+  }
   chatStore.createChat({ pid: parentId, title: '', modelId: '', providerId: '' })
   childChats.value = await chatStore.getChildChatByIdFun(parentId)
+}
+const handleChildChatDelete = (childChatId: string) => {
+  childChats.value = childChats.value.filter((item) => item.id !== childChatId)
 }
 // 向所有对话，包括子对话发送消息
 const mainChatRef = useTemplateRef<InstanceType<typeof ChatMain>>('mainChatRef')
@@ -76,8 +81,8 @@ const initoutLoadingMap = (val) => {
 </script>
 
 <template>
-  <div class="w-full h-screen flex flex-col">
-    <div class="w-full flex-1 overflow-y-auto flex flex-row relative">
+  <div class="w-full h-screen flex flex-col overflow-x-auto">
+    <div class="w-full flex-1 overflow-y-auto flex flex-row flex-wrap lg:flex-nowrap relative">
       <div class="absolute z-10 h-[55px] right-0 top-0 flex flex-row items-center justify-center px-4">
         <button title="添加子对话" @click="addChildChat(chatStore.curChat?.id || '')">
           <Icon
@@ -88,22 +93,30 @@ const initoutLoadingMap = (val) => {
         <span></span>
       </div>
       <!-- 主对话 -->
-      <ChatMain ref="mainChatRef" @on-outloading-change="handleOutLoadingChange($event, chatStore.curChat?.id || '')" />
+      <ChatMain
+        ref="mainChatRef"
+        class="flex-1 min-w-0 basis-sm lg:h-[50h]"
+        @on-outloading-change="handleOutLoadingChange($event, chatStore.curChat?.id || '')"
+      />
       <!-- 子对话 - 比较项 -->
       <template v-for="(childChat, index) in childChats" :key="childChat.id">
         <ChatMain
           :ref="(el) => (childChatRefList[index] = el as any)"
           v-model="childChats[index]"
+          class="flex-1 min-w-0 basis-sm lg:h-[50h]"
+          @on-child-chat-delete="handleChildChatDelete"
           @on-outloading-change="handleOutLoadingChange($event, childChat.id)"
         />
       </template>
     </div>
     <!-- 聊天输入框 -->
-    <div
-      v-if="childChats?.length > 0"
-      class="w-full h-[auto] flex-basis-[120px] px-5 pb-4 pt-2 box-size max-w-5xl mx-auto"
-    >
-      <SearchInput :out-loading="allOutloading" @send-msg="onSendAllmsg" @stop-cur-msg="stopAllMsg" />
+    <div v-if="childChats?.length > 0" class="w-full h-[auto] basis-[120px] px-5 pb-4 pt-2 box-size max-w-5xl mx-auto">
+      <SearchInput
+        :out-loading="allOutloading"
+        :placeholder="$t('sendAllInputPlaceholder')"
+        @send-msg="onSendAllmsg"
+        @stop-cur-msg="stopAllMsg"
+      />
     </div>
   </div>
 </template>

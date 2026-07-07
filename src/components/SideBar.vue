@@ -1,10 +1,11 @@
 <template>
   <div
+    id="sidebar"
     ref="sidebarRef"
-    class="bg-[rgba(241,243,244,1)] dark:bg-gray-700 w-[290px] h-full flex flex-col justify-between p-2 border-r border-r-gray-300 dark:border-r-gray-500 transition-all duration-300 ease-initial -translate-x-full md:translate-x-0 absolute z-[10] md:static"
+    class="bg-[rgba(241,243,244,1)] dark:bg-gray-700 w-[290px] h-full flex flex-col justify-between py-2 border-r border-r-gray-300 dark:border-r-gray-500 transition-all duration-300 ease-initial -translate-x-full md:translate-x-0 absolute z-[1] md:static"
   >
     <!-- 新建对话 -->
-    <div class="w-full flex flex-row items-center gap-2">
+    <div class="w-full flex flex-row items-center gap-2 px-2">
       <button class="btn-blank-primary" @click="createChatFun">
         <Icon icon="ant-design:aliwangwang-outlined" width="26" height="26" />
         {{ $t('addChat') }}
@@ -12,13 +13,13 @@
     </div>
     <!-- 历史记录 -->
     <ScrollAreaRoot class="flex-1 w-full h-[calc(100vh-100px)] relative">
-      <ScrollAreaViewport class="w-full h-full rounded">
+      <ScrollAreaViewport class="w-full h-full rounded px-2">
         <div class="w-[273px] h-full flex flex-col">
           <template v-if="parentChats?.length > 0">
             <div
               v-for="item in parentChats"
               :key="item.id"
-              class="w-full flex flex-row items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer px-1 py-2 rounded-lg"
+              class="group w-full flex flex-row items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer p-2 rounded-lg"
               :class="{ 'bg-gray-200 dark:bg-gray-500': item.id === chatStore.curChat?.id }"
               @click="changeChatFun(item)"
             >
@@ -33,7 +34,19 @@
                 :title="item.title"
                 >{{ item.title || $t('newChat') }}
               </span>
-              <span class="text-sm text-gray-400">{{ item.createdAt?.toLocaleString()?.slice(5, 10) }}</span>
+              <span class="group-hover:hidden text-sm text-gray-400">{{ relativeTime(item.createdAt) }}</span>
+              <WxDropdownMenu :down-list="downList" @select="handleSelect">
+                <template #trigger>
+                  <Icon
+                    class="dark:text-white rounded-md transition-all duration-300 ease-in-out p-1 hover:bg-gray-400 cursor-pointer"
+                    icon="ant-design:more-outlined"
+                    width="24"
+                    height="24"
+                    @click.stop
+                    @pointer-down.stop
+                  />
+                </template>
+              </WxDropdownMenu>
             </div>
           </template>
           <template v-else>
@@ -52,7 +65,7 @@
       <ScrollAreaCorner />
     </ScrollAreaRoot>
     <!-- 设置按钮 -->
-    <div class="w-full h-[40px] flex flex-dir-row items-center cursor-pointer">
+    <div class="w-full h-[40px] flex flex-dir-row items-center cursor-pointer px-2">
       <Icon
         icon="ant-design:setting-outlined"
         class="text-gray-900 dark:text-gray-300 hover:text-gray-600 dark:hover:text-gray-400 active:text-gray-400 dark:active:text-gray-500 select-none"
@@ -63,7 +76,7 @@
     </div>
 
     <Icon
-      class="absolute z-[99] top-[50%] mt-[-5px] -translate-y-[50%] right-[-30px] cursor-pointer dark:text-white md:hidden"
+      class="absolute z-[1] top-[50%] mt-[-5px] -translate-y-[50%] right-[-30px] cursor-pointer dark:text-white md:hidden"
       :icon="isCollapsed ? 'lucide:sidebar-open' : 'lucide:sidebar-close'"
       width="30"
       height="30"
@@ -83,6 +96,8 @@ import { useRouter, useRoute } from 'vue-router'
 import chatDefaultIcon from '@/assets/images/tdesign--logo-android.png'
 import { storeToRefs } from 'pinia'
 import { Chat } from '@/types/db'
+import { relativeTime } from '@/utils'
+import WxDropdownMenu from '@/components/wx-reka/WxDropdownMenu.vue'
 
 // 对话数据类型
 const { parentChats } = storeToRefs(useChatStore())
@@ -138,6 +153,21 @@ const handleResize = () => {
     } else {
       collapseSidebar()
     }
+  }
+}
+// 对话操作下拉菜单
+const downList = ref([{ label: '删除', i18nKey: 'delete', value: 'delete', icon: 'ant-design:delete-twotone' }])
+const handleSelect = (value: string) => {
+  console.log('select', value)
+  if (value === 'delete') {
+    openDeleteChat(chatStore.curChat?.id || '')
+  }
+}
+// 删除对话
+const openDeleteChat = async (id: string) => {
+  const res = await window.electronIpcApi.openDeleteConfrim()
+  if (res) {
+    chatStore.deleteChatFun(id)
   }
 }
 onMounted(() => {

@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 export const fmtDate = (date: Date | string | number, fmt = 'yyyy-MM-dd hh:mm:ss') => {
   if (!date) return ''
   if (typeof date === 'string') {
@@ -37,4 +38,33 @@ export const fileToBase64 = (file: File): Promise<string> => {
       reject(error)
     }
   })
+}
+// 相对时间
+export const relativeTime = (date: Date | string | number) => {
+  const target = dayjs(date)
+  const now = dayjs()
+
+  const timeDiff = now.diff(target, 'second')
+  const dayDiff = now.startOf('day').diff(target.startOf('day'), 'day')
+
+  if (timeDiff < 60) {
+    return `${timeDiff}秒前`
+  }
+  if (dayDiff === 0) {
+    return target.format('hh:mm')
+  }
+  if (dayDiff === 1) {
+    return `昨天 ${target.format('hh:mm')}`
+  }
+  if (dayDiff === 2) {
+    return `前天 ${target.format('hh:mm')}`
+  }
+  if (dayDiff <= 3) {
+    return `${dayDiff}天前`
+  }
+  if (target.year() === now.year()) {
+    return target.format('MM-DD')
+  } else {
+    return target.format('YYYY-MM-DD')
+  }
 }

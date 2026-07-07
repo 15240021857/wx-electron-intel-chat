@@ -1,14 +1,26 @@
 <template>
   <div class="w-full relative">
     <h2
-      class="w-full bg-gray-100 dark:bg-gray-700 h-[52px] flex items-center px-3 border-b border-b-gray-300 dark:border-b-gray-500"
+      class="group w-full bg-gray-100 dark:bg-gray-700 h-[52px] flex items-center px-3 border-b border-b-gray-300 dark:border-b-gray-500"
     >
       <template v-if="selectedModel?.label">
-        <span class="font-semibold dark:text-white">{{ selectedModel?.value ? `${selectedModel?.label}` : '' }}</span>
-        <span class="mx-1 dark:text-gray-200">——</span>
-        <span class="font-semibold dark:text-white">{{
-          curChatWindowChat?.title ? curChatWindowChat?.title.slice(0, 20) : $t('newChat')
+        <span class="font-semibold dark:text-white truncate line-clamp-2 max-w-[160px]">{{
+          selectedModel?.value ? `${selectedModel?.label}` : ''
         }}</span>
+        <span class="mx-1 dark:text-gray-200">——</span>
+        <span
+          class="font-semibold dark:text-white truncate line-clamp-2 max-w-[170px]"
+          :title="curChatWindowChat?.title ? curChatWindowChat?.title.slice(0, 20) : $t('newChat')"
+          >{{ curChatWindowChat?.title ? curChatWindowChat?.title.slice(0, 20) : $t('newChat') }}</span
+        >
+        <Icon
+          v-if="childChat?.id"
+          icon="ant-design:delete-twotone"
+          class="hidden group-hover:block ml-1 text-primary hover:text-gray-800 dark:text-primary dark:hover:text-primary-hover active:text-gray-400 select-none cursor-pointer"
+          width="22"
+          height="22"
+          @click="openDeleteChildChat(childChat?.id)"
+        />
       </template>
       <div v-else class="dark:text-white text-base">{{ $t('newChat') }}</div>
     </h2>
@@ -51,11 +63,13 @@ import { MsgItem, ProviderParam, SendMsgParams } from '@/types/chat'
 import { Chat, Message, Model } from '@/types/db'
 import { useChatStore } from '@/store/useChatStore'
 import { useMsgStore } from '@/store/useMsgStore'
+import { Icon } from '@iconify/vue'
 
 const childChat = defineModel<Chat | null>()
 
 const emits = defineEmits<{
   (e: 'on-outloading-change', outLoading: boolean): void
+  (e: 'on-child-chat-delete', childChatId: string): void
 }>()
 
 const chatStore = useChatStore()
@@ -512,6 +526,17 @@ const readHttpStream = async (res: any) => {
       ChartMessageRef.value?.scrollToBottom()
     }
   }
+}
+// 打开删除模型
+const openDeleteChildChat = (id: string) => {
+  window.electronIpcApi.openDeleteConfrim().then(async (res: boolean) => {
+    if (res) {
+      console.log('删除子对话', id)
+      await chatStore.deleteChatFun(id)
+      console.log('删除成功')
+      emits('on-child-chat-delete', id)
+    }
+  })
 }
 
 // 卸载组件时清理
