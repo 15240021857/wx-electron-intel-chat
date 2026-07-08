@@ -30,11 +30,13 @@ export const useChatStore = defineStore('chatStore', () => {
       pid: pid || '',
     }
     const newChat = await addChat(chatData)
-    chatList.value = [newChat, ...chatList.value]
 
     if (!pid) {
       // 创建子对话时，不用切换当前对话
+      chatList.value = [newChat, ...chatList.value]
       curChat.value = newChat
+    } else {
+      chatList.value = [newChat, ...chatList.value]
     }
   }
   // 修改对话
@@ -66,6 +68,9 @@ export const useChatStore = defineStore('chatStore', () => {
     // 删除对话的所有消息
     // 删除所有子对话的所有消息
     chatList.value = chatList.value.filter((item) => item.id !== chatId)
+    if (curChat.value?.id === chatId) {
+      setCurChat(parentChats.value[0] || null)
+    }
   }
 
   // 根据pid获取子对话

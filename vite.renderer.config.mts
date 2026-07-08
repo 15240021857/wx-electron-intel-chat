@@ -6,6 +6,7 @@ import path from 'path'
 
 // https://vitejs.dev/config
 export default defineConfig({
+  base: './',
   plugins: [vue(), tailwindcss()],
   resolve: {
     alias: {
@@ -14,5 +15,9 @@ export default defineConfig({
   },
   server: {
     port: 5175,
+  },
+  build: {
+    outDir: 'dist-renderer',
+    emptyOutDir: true,
   },
 })

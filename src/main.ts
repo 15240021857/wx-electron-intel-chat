@@ -4,30 +4,54 @@ import started from 'electron-squirrel-startup'
 import BigModel from './electron/main/bigModel'
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (started) {
+if (started && process.platform === 'win32') {
   app.quit()
 }
-
+const isDev = !app.isPackaged
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1035,
+    height: 685,
     webPreferences: {
       // nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      sandbox: false, // 如果用 Dexie，通常要关
     },
   })
 
   // and load the index.html of the app.
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL)
+  if (isDev) {
+    mainWindow.loadURL('http://localhost:5175')
+    // mainWindow.webContents.on('did-finish-load', () => {
+    //   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    //     callback({
+    //       responseHeaders: {
+    //         ...details.responseHeaders,
+    //         'Content-Security-Policy': [
+    //           "default-src 'self';",
+    //           "script-src 'self' 'unsafe-eval';", // Vite dev 必须
+    //           "connect-src 'self' http://localhost:* https://api.iconify.design; ",
+    //           "img-src 'self' data:;",
+    //         ].join(' '),
+    //       },
+    //     })
+    //   })
+    // })
   } else {
-    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`))
+    mainWindow.loadFile(path.join(app.getAppPath(), 'dist-renderer/index.html'))
   }
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools()
+  // 只在开发环境打开DevTools
+  if (isDev) {
+    mainWindow.webContents.openDevTools()
+  }
+  // 在生产环境不要默认的窗口菜单栏
+  if (!isDev) {
+    mainWindow.setMenu(null)
+  }
 }
 
 // This method will be called when Electron has finished

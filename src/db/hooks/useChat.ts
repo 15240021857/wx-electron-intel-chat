@@ -93,11 +93,23 @@ export const useChat = () => {
     try {
       console.log('删除对话：', id)
       const res = await db.chats.delete(id)
-      console.log('删除成功：', res)
+      // 批量删除子对话
+      await db.chats.where('pid').equals(id).delete()
+      // 批量删除对话和子对话的消息
+      let chatIds = [id]
+      const childChats = (await getChildChatById(id)) || []
+      if (childChats.length > 0) {
+        chatIds = [id, ...childChats.map((item) => item.id)]
+      }
+      console.log(chatIds)
+
+      await db.messages.where('chatId').anyOf(chatIds).delete()
+      console.log('删除对话和子对话成功，删除相关消息成功：', chatIds)
     } catch (error) {
       console.error('删除对话失败：', error)
     }
   }
+
   // 根据id获取chat
   const getChatById = async (id: string) => {
     try {

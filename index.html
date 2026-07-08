@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <title>小吴智能助手</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        connect-src 'self'
+          http://localhost:*
+          https://api.iconify.design;
+          img-src 'self' data:;
+      "
+    />
   </head>
   <body>
     <div id="app"></div>

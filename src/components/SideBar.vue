@@ -35,7 +35,7 @@
                 >{{ item.title || $t('newChat') }}
               </span>
               <span class="group-hover:hidden text-sm text-gray-400">{{ relativeTime(item.createdAt) }}</span>
-              <WxDropdownMenu :down-list="downList" @select="handleSelect">
+              <WxDropdownMenu :down-list="downList" @select="handleSelect($event, item.id)">
                 <template #trigger>
                   <Icon
                     class="dark:text-white rounded-md transition-all duration-300 ease-in-out p-1 hover:bg-gray-400 cursor-pointer"
@@ -157,10 +157,10 @@ const handleResize = () => {
 }
 // 对话操作下拉菜单
 const downList = ref([{ label: '删除', i18nKey: 'delete', value: 'delete', icon: 'ant-design:delete-twotone' }])
-const handleSelect = (value: string) => {
-  console.log('select', value)
+const handleSelect = (value: string, chatId: string) => {
+  console.log('select', value, chatId)
   if (value === 'delete') {
-    openDeleteChat(chatStore.curChat?.id || '')
+    openDeleteChat(chatId)
   }
 }
 // 删除对话

@@ -5,13 +5,10 @@ directories:
   output: dist_electron
   buildResources: build
 files:
-  - from: dist-renderer
-    to: dist-renderer
-  - from: .vite/build/main.js
-    to: .vite/build/main.js
-  - from: .vite/build/preload.js
-    to: .vite/build/preload.js
-  - node_modules/**
+  - dist-renderer/**/*
+  - .vite/build/main.js
+  - .vite/build/preload.js
+  # - node_modules/**
   - package.json
 extraResources:
   - from: src/assets
