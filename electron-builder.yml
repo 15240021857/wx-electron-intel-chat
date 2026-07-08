@@ -1,0 +1,40 @@
+appId: com.xiaowu.mychat
+productName: ChongChongChat
+copyright: Copyright © 2024 XiaoWu
+directories:
+  output: dist_electron
+  buildResources: build
+files:
+  - from: dist-renderer
+    to: dist-renderer
+  - from: .vite/build/main.js
+    to: .vite/build/main.js
+  - from: .vite/build/preload.js
+    to: .vite/build/preload.js
+  - node_modules/**
+  - package.json
+extraResources:
+  - from: src/assets
+    to: assets
+publish:
+  - provider: github
+    owner: 15240021857
+    repo: wx-electron-intel-chat
+
+win:
+  target: nsis
+  icon: src/assets/icons/win/icon.ico
+  # icon: build/icon.ico
+nsis:
+  oneClick: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true # ← 你要的自定义安装路径
+  createDesktopShortcut: always
+  shortcutName: ChongChongChat
+
+mac:
+  target: dmg
+  icon: src/assets/icons/mac/icon.icns
+
+dmg:
+  icon: src/assets/icons/mac/icon.icns

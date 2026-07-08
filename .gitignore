@@ -90,6 +90,8 @@ typings/
 
 # Electron-Forge
 out/
+dist_electron/
+dist-renderer/
 
 #env
 .env

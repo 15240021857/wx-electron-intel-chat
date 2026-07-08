@@ -8,7 +8,8 @@
     "types": ["node", "vite/client"], // 加载的声明文件
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "baseUrl": "."
   },
   "exclude": ["**/*.vue.bak"],
   "include": ["vite.renderer.config.mts", "src/**/*", "src/**/*.ts"] // 只包含渲染进程代码

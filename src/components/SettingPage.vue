@@ -21,7 +21,7 @@ const goback = () => {
       @click="goback"
     >
       <Icon icon="ant-design:left-outlined" class="w-5 h-5 ml-5" />
-      <span>返回</span>
+      <span>{{ $t('common.back') }}</span>
     </div>
     <TabsRoot
       class="flex flex-col md:w-[70%] sm:w-[300px] max-w-3xl mx-auto shadow-sm rounded-lg border"

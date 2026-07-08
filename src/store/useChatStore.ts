@@ -56,6 +56,15 @@ export const useChatStore = defineStore('chatStore', () => {
   // 删除对话
   const deleteChatFun = async (chatId: string) => {
     await deleteChat(chatId)
+    // 删除所有子对话
+    // const childChats = await getChildChatById(chatId)
+    // if (childChats) {
+    //   childChats.forEach((item) => {
+    //     deleteChat(item.id)
+    //   })
+    // }
+    // 删除对话的所有消息
+    // 删除所有子对话的所有消息
     chatList.value = chatList.value.filter((item) => item.id !== chatId)
   }
 
