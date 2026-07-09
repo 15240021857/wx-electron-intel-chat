@@ -42,5 +42,4 @@ esbuild.buildSync({
     'tls',
   ],
 })
-
 console.log('✅ Main process built')
